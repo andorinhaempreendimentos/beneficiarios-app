@@ -16,6 +16,8 @@ import type { Database } from "@/lib/database.types";
 import { ProjetoSeletor } from "./projeto-seletor";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
+import { Suspense } from "react";
+
 type Usuario = Database["public"]["Tables"]["usuarios"]["Row"];
 type Objeto = Database["public"]["Tables"]["objetos"]["Row"];
 
@@ -40,7 +42,9 @@ export function AppHeader({ usuario, objetos }: HeaderProps) {
       <SidebarTrigger className="-ml-1" />
 
       <div className="flex-1 flex items-center gap-3">
-        <ProjetoSeletor objetos={objetos} />
+        <Suspense fallback={null}>
+          <ProjetoSeletor objetos={objetos} />
+        </Suspense>
       </div>
 
       <DropdownMenu>

@@ -9,6 +9,8 @@ import type { Database } from "@/lib/database.types";
 
 type Usuario = Database["public"]["Tables"]["usuarios"]["Row"];
 
+export const dynamic = "force-dynamic";
+
 export default async function DashboardLayout({
   children,
 }: {
