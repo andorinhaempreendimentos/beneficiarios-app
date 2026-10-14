@@ -2187,12 +2187,27 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      usuarios_com_email: {
+        Row: {
+          id: string
+          nome_completo: string | null
+          papel: string
+          ativo: boolean
+          criado_em: string | null
+          atualizado_em: string | null
+          email: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       auth_papel: { Args: never; Returns: string }
       usuario_tem_acesso_objeto: {
         Args: { p_objeto_id: string }
+        Returns: boolean
+      }
+      admin_redefinir_senha: {
+        Args: { p_user_id: string; p_nova_senha: string }
         Returns: boolean
       }
     }

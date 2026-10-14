@@ -1,0 +1,396 @@
+"use client";
+
+import React, { useState } from "react";
+import type { Database } from "@/lib/database.types";
+import {
+  createRegiao,
+  updateRegiao,
+  deleteRegiao,
+} from "@/lib/actions/regioes";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/admin/confirm-dialog";
+import { EmptyState } from "@/components/admin/empty-state";
+import { Plus, Search, Edit2, Trash2, Compass, AlertCircle } from "lucide-react";
+
+type RegiaoRow = Database["public"]["Tables"]["regioes"]["Row"];
+type ObjetoSimple = Pick<Database["public"]["Tables"]["objetos"]["Row"], "id" | "nome">;
+
+export interface CoordenadorSimple {
+  id: string;
+  nome_completo: string | null;
+  papel: string;
+}
+
+export type RegiaoItem = RegiaoRow & {
+  objeto: ObjetoSimple | null;
+  coordenador: CoordenadorSimple | null;
+  locais: { id: string; nome: string }[];
+};
+
+interface RegioesClientProps {
+  initialRegioes: RegiaoItem[];
+  objetos: ObjetoSimple[];
+  coordenadores: CoordenadorSimple[];
+}
+
+export function RegioesClient({
+  initialRegioes,
+  objetos,
+  coordenadores,
+}: RegioesClientProps) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedObjetoId, setSelectedObjetoId] = useState<string>("todos");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<RegiaoItem | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Exclusão
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<RegiaoItem | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  // Form state
+  const [formData, setFormData] = useState({
+    nome: "",
+    objeto_id: "",
+    coordenador_id: "",
+  });
+
+  function openCreateModal() {
+    setEditingItem(null);
+    setFormData({
+      nome: "",
+      objeto_id: objetos.length > 0 ? objetos[0].id : "",
+      coordenador_id: "",
+    });
+    setErrorMsg(null);
+    setModalOpen(true);
+  }
+
+  function openEditModal(item: RegiaoItem) {
+    setEditingItem(item);
+    setFormData({
+      nome: item.nome,
+      objeto_id: item.objeto_id,
+      coordenador_id: item.coordenador_id ?? "",
+    });
+    setErrorMsg(null);
+    setModalOpen(true);
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setErrorMsg(null);
+
+    const payload = {
+      nome: formData.nome,
+      objeto_id: formData.objeto_id,
+      coordenador_id: formData.coordenador_id ? formData.coordenador_id : null,
+    };
+
+    let result;
+    if (editingItem) {
+      result = await updateRegiao(editingItem.id, payload);
+    } else {
+      result = await createRegiao(payload);
+    }
+
+    setLoading(false);
+
+    if (result.success) {
+      setModalOpen(false);
+    } else {
+      setErrorMsg(result.error ?? "Erro ao salvar região.");
+    }
+  }
+
+  function handleOpenDelete(item: RegiaoItem) {
+    setDeleteTarget(item);
+    setDeleteError(null);
+    setDeleteOpen(true);
+  }
+
+  async function handleConfirmDelete() {
+    if (!deleteTarget) return;
+    setDeleteError(null);
+
+    const result = await deleteRegiao(deleteTarget.id);
+
+    if (result.success) {
+      setDeleteOpen(false);
+      setDeleteTarget(null);
+    } else {
+      setDeleteError(result.error ?? "Erro ao excluir região.");
+    }
+  }
+
+  const filteredRegioes = initialRegioes.filter((reg) => {
+    const nomeRegiao = reg.nome ? reg.nome.toLowerCase() : "";
+    const nomeObjeto = reg.objeto?.nome ? reg.objeto.nome.toLowerCase() : "";
+    const nomeCoordenador = reg.coordenador?.nome_completo ? reg.coordenador.nome_completo.toLowerCase() : "";
+    const term = searchTerm.toLowerCase();
+
+    const matchesSearch =
+      nomeRegiao.includes(term) ||
+      nomeObjeto.includes(term) ||
+      nomeCoordenador.includes(term);
+
+    const matchesObjeto =
+      selectedObjetoId === "todos" || reg.objeto_id === selectedObjetoId;
+
+    return matchesSearch && matchesObjeto;
+  });
+
+  return (
+    <div className="space-y-4">
+      {/* Barra de Busca, Filtro e Ação */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nome, projeto ou coordenador..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 h-9 text-sm"
+            />
+          </div>
+
+          <div className="w-full sm:w-60">
+            <select
+              value={selectedObjetoId}
+              onChange={(e) => setSelectedObjetoId(e.target.value)}
+              className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <option value="todos">Todos os Projetos</option>
+              {objetos.map((obj) => (
+                <option key={obj.id} value={obj.id}>
+                  {obj.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <Button onClick={openCreateModal} className="gap-2 shrink-0">
+          <Plus className="h-4 w-4" />
+          <span>Nova Região</span>
+        </Button>
+      </div>
+
+      {/* Tabela de Regiões */}
+      {filteredRegioes.length === 0 ? (
+        <EmptyState
+          icon={Compass}
+          title="Nenhuma região territorial encontrada"
+          description={
+            searchTerm || selectedObjetoId !== "todos"
+              ? "Tente ajustar os filtros ou termo de busca."
+              : "Cadastre regiões para descentralizar os polos físicos de atendimento sob coordenadores responsáveis."
+          }
+          actionLabel={!searchTerm && selectedObjetoId === "todos" ? "Criar Região" : undefined}
+          onAction={!searchTerm && selectedObjetoId === "todos" ? openCreateModal : undefined}
+        />
+      ) : (
+        <div className="rounded-lg border border-border bg-card overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Região</TableHead>
+                <TableHead>Projeto Vinculado</TableHead>
+                <TableHead>Coordenador Titular</TableHead>
+                <TableHead>Polos Vinculados</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredRegioes.map((reg) => {
+                const qtdPolos = reg.locais?.length ?? 0;
+                return (
+                  <TableRow key={reg.id}>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        <Compass className="h-4 w-4 text-primary shrink-0" />
+                        <span>{reg.nome}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {reg.objeto?.nome ?? "Projeto não informado"}
+                    </TableCell>
+                    <TableCell>
+                      {reg.coordenador ? (
+                        <div>
+                          <div className="text-sm font-medium">{reg.coordenador.nome_completo ?? "Coordenador"}</div>
+                          <div className="text-xs text-muted-foreground capitalize">
+                            Papel: {reg.coordenador.papel.replace("_", " ")}
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground italic">
+                          Sem coordenador atribuído
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {qtdPolos} {qtdPolos === 1 ? "polo" : "polos"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => openEditModal(reg)}
+                          title="Editar região"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => handleOpenDelete(reg)}
+                          title="Excluir região"
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
+      {/* Modal de Criação / Edição */}
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent className="max-w-md">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <DialogHeader>
+              <DialogTitle>
+                {editingItem ? "Editar Região Territorial" : "Nova Região Territorial"}
+              </DialogTitle>
+              <DialogDescription>
+                Regra Canônica §3.2: Cada região territorial organiza os polos físicos e vincula um Coordenador responsável.
+              </DialogDescription>
+            </DialogHeader>
+
+            {errorMsg && (
+              <div className="flex items-center gap-2 p-3 rounded-md bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="nome">Nome da Região *</Label>
+                <Input
+                  id="nome"
+                  required
+                  placeholder="Ex: Zona Norte, Polo Central, Região Metropolitana"
+                  value={formData.nome}
+                  onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="objeto_id">Projeto Social (Objeto) *</Label>
+                <select
+                  id="objeto_id"
+                  required
+                  value={formData.objeto_id}
+                  onChange={(e) => setFormData({ ...formData, objeto_id: e.target.value })}
+                  className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                >
+                  <option value="" disabled>
+                    Selecione o projeto...
+                  </option>
+                  {objetos.map((obj) => (
+                    <option key={obj.id} value={obj.id}>
+                      {obj.nome}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="coordenador_id">Coordenador Titular Responsável</Label>
+                <select
+                  id="coordenador_id"
+                  value={formData.coordenador_id}
+                  onChange={(e) => setFormData({ ...formData, coordenador_id: e.target.value })}
+                  className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                >
+                  <option value="">Nenhum coordenador atribuído no momento</option>
+                  {coordenadores.map((coord) => (
+                    <option key={coord.id} value={coord.id}>
+                      {coord.nome_completo ?? "Usuário"} ({coord.papel.replace("_", " ")})
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-muted-foreground">
+                  O coordenador titular acompanha os relatórios, valida vistorias e fecha prestações de contas da região.
+                </p>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setModalOpen(false)}
+                disabled={loading}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? "Salvando..." : editingItem ? "Salvar Alterações" : "Criar Região"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Confirmação de Exclusão */}
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Excluir Região Territorial"
+        description={
+          deleteError
+            ? deleteError
+            : `Tem certeza que deseja excluir a região "${deleteTarget?.nome}"? Esta operação é irreversível.`
+        }
+        confirmLabel="Sim, excluir"
+        cancelLabel="Cancelar"
+        variant="destructive"
+        onConfirm={handleConfirmDelete}
+      />
+    </div>
+  );
+}
