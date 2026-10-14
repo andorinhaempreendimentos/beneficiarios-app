@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { localSchema, type LocalInput } from "@/lib/validations/admin";
+import type { Database } from "@/lib/database.types";
 
 function generateSlug(nome: string): string {
   const base = nome
@@ -186,6 +187,7 @@ export async function updateLocal(id: string, input: LocalInput) {
   }
 
   revalidatePath("/admin/locais");
+  revalidatePath(`/admin/locais/${id}`);
   revalidatePath("/admin/regioes");
   revalidatePath(`/admin/objetos/${parsed.data.objeto_id}`);
   return { success: true, data };
@@ -274,4 +276,52 @@ export async function deleteLocal(id: string) {
   revalidatePath("/admin/locais");
   revalidatePath(`/admin/objetos/${local.objeto_id}`);
   return { success: true };
+}
+
+export async function getLocalById(id: string) {
+  const supabase = await createClient();
+
+  const { data: local, error } = await supabase
+    .from("locais")
+    .select(`
+      *,
+      objeto:objetos(id, nome, termo_local, termo_bloco, termo_grupo, termo_instrutor, tipo),
+      regiao:regioes(id, nome, coordenador_id),
+      grupos(id, nome, modalidade_id, capacidade_maxima, idade_minima, idade_maxima, ativo),
+      blocos(
+        *,
+        instrutor:funcionarios(id, nome_completo),
+        bloco_grupos(
+          grupo:grupos(id, nome)
+        )
+      )
+    `)
+    .eq("id", id)
+    .single();
+
+  if (error || !local) {
+    return null;
+  }
+
+  // Mapear turmas de bloco_grupos
+  type RawBlocoType = Database["public"]["Tables"]["blocos"]["Row"] & {
+    instrutor: { id: string; nome_completo: string } | null;
+    bloco_grupos: { grupo: { id: string; nome: string } | null }[];
+  };
+  const rawBlocos = (local.blocos ?? []) as unknown as RawBlocoType[];
+  const blocosFormatados = rawBlocos.map((b) => {
+    const turmas = (b.bloco_grupos ?? [])
+      .map((bg) => bg.grupo)
+      .filter((g): g is { id: string; nome: string } => Boolean(g));
+
+    return {
+      ...b,
+      turmas,
+    };
+  });
+
+  return {
+    ...local,
+    blocos: blocosFormatados,
+  };
 }

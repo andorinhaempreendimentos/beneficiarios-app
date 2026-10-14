@@ -76,9 +76,12 @@ export type GrupoInput = z.infer<typeof grupoSchema>;
 // 2. Blocos de Horário / Planejamento Temporal (§3.4)
 export const blocoSchema = z
   .object({
-    nome: z.string().optional().nullable(),
     objeto_id: z.string().uuid("Projeto obrigatório"),
     local_id: z.string().uuid("Polo/Local obrigatório"),
+    nome: z.string().optional().nullable(),
+    tipo_recorrencia: z
+      .enum(["semanal", "mensal_dia_fixo", "mensal_dia_semana", "pontual"])
+      .default("semanal"),
     dia_semana: z.coerce
       .number()
       .int()
@@ -87,6 +90,23 @@ export const blocoSchema = z
       .optional()
       .nullable()
       .or(z.literal("")),
+    dia_mes: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(31)
+      .optional()
+      .nullable()
+      .or(z.literal("")),
+    ordem_semana_mes: z.coerce
+      .number()
+      .int()
+      .optional()
+      .nullable()
+      .or(z.literal("")),
+    ajuste_fim_de_semana: z
+      .enum(["exato", "proximo_dia_util", "dia_util_anterior"])
+      .default("exato"),
     data_especifica: z
       .string()
       .min(10, "Data específica deve ter o formato AAAA-MM-DD")
@@ -111,13 +131,10 @@ export const blocoSchema = z
   .refine((data) => data.hora_fim > data.hora_inicio, {
     message: "O horário de término deve ser posterior ao horário de início",
     path: ["hora_fim"],
-  })
-  .refine((data) => data.dia_semana !== null || Boolean(data.data_especifica), {
-    message: "Informe o dia da semana (projeto contínuo) ou a data específica (projeto pontual)",
-    path: ["dia_semana"],
   });
 
-export type BlocoInput = z.infer<typeof blocoSchema>;
+export type BlocoInput = z.input<typeof blocoSchema>;
+export type BlocoOutput = z.infer<typeof blocoSchema>;
 
 // 3. Beneficiário - Cadastro Civil Universal (§3.3)
 export const beneficiarioSchema = z

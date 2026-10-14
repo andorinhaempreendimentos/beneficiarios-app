@@ -119,7 +119,11 @@ export async function createBloco(input: BlocoInput) {
       nome: parsed.data.nome || null,
       objeto_id: parsed.data.objeto_id,
       local_id: parsed.data.local_id,
+      tipo_recorrencia: parsed.data.tipo_recorrencia || "semanal",
       dia_semana: diaSemanaVal,
+      dia_mes: parsed.data.dia_mes || null,
+      ordem_semana_mes: parsed.data.ordem_semana_mes || null,
+      ajuste_fim_de_semana: parsed.data.ajuste_fim_de_semana || "exato",
       data_especifica: parsed.data.data_especifica || null,
       hora_inicio: parsed.data.hora_inicio,
       hora_fim: parsed.data.hora_fim,
@@ -149,6 +153,7 @@ export async function createBloco(input: BlocoInput) {
   revalidatePath("/planejamento");
   revalidatePath("/calendario");
   revalidatePath("/grupos");
+  revalidatePath(`/admin/locais/${parsed.data.local_id}`);
   revalidatePath(`/admin/objetos/${parsed.data.objeto_id}`);
   return { success: true, data: bloco };
 }
@@ -176,7 +181,11 @@ export async function updateBloco(id: string, input: BlocoInput) {
       nome: parsed.data.nome || null,
       objeto_id: parsed.data.objeto_id,
       local_id: parsed.data.local_id,
+      tipo_recorrencia: parsed.data.tipo_recorrencia || "semanal",
       dia_semana: diaSemanaVal,
+      dia_mes: parsed.data.dia_mes || null,
+      ordem_semana_mes: parsed.data.ordem_semana_mes || null,
+      ajuste_fim_de_semana: parsed.data.ajuste_fim_de_semana || "exato",
       data_especifica: parsed.data.data_especifica || null,
       hora_inicio: parsed.data.hora_inicio,
       hora_fim: parsed.data.hora_fim,
@@ -207,6 +216,7 @@ export async function updateBloco(id: string, input: BlocoInput) {
   revalidatePath("/planejamento");
   revalidatePath("/calendario");
   revalidatePath("/grupos");
+  revalidatePath(`/admin/locais/${parsed.data.local_id}`);
   revalidatePath(`/admin/objetos/${parsed.data.objeto_id}`);
   return { success: true, data: bloco };
 }
@@ -221,7 +231,7 @@ export async function toggleBlocoAtivo(id: string, ativo: boolean) {
       atualizado_em: new Date().toISOString(),
     })
     .eq("id", id)
-    .select("objeto_id")
+    .select("objeto_id, local_id")
     .single();
 
   if (error) {
@@ -229,6 +239,9 @@ export async function toggleBlocoAtivo(id: string, ativo: boolean) {
   }
 
   revalidatePath("/planejamento");
+  if (data?.local_id) {
+    revalidatePath(`/admin/locais/${data.local_id}`);
+  }
   if (data?.objeto_id) {
     revalidatePath(`/admin/objetos/${data.objeto_id}`);
   }
@@ -260,7 +273,7 @@ export async function deleteBloco(id: string) {
 
   const { data: bloco, error: fetchError } = await supabase
     .from("blocos")
-    .select("objeto_id")
+    .select("objeto_id, local_id")
     .eq("id", id)
     .single();
 
@@ -275,6 +288,9 @@ export async function deleteBloco(id: string) {
   }
 
   revalidatePath("/planejamento");
+  if (bloco.local_id) {
+    revalidatePath(`/admin/locais/${bloco.local_id}`);
+  }
   revalidatePath(`/admin/objetos/${bloco.objeto_id}`);
   return { success: true };
 }

@@ -140,10 +140,12 @@ export type Database = {
       }
       blocos: {
         Row: {
+          ajuste_fim_de_semana: string | null
           ativo: boolean
           atualizado_em: string | null
           criado_em: string | null
           data_especifica: string | null
+          dia_mes: number | null
           dia_semana: number | null
           hora_fim: string
           hora_inicio: string
@@ -152,12 +154,16 @@ export type Database = {
           local_id: string
           nome: string | null
           objeto_id: string
+          ordem_semana_mes: number | null
+          tipo_recorrencia: string
         }
         Insert: {
+          ajuste_fim_de_semana?: string | null
           ativo?: boolean
           atualizado_em?: string | null
           criado_em?: string | null
           data_especifica?: string | null
+          dia_mes?: number | null
           dia_semana?: number | null
           hora_fim: string
           hora_inicio: string
@@ -166,12 +172,16 @@ export type Database = {
           local_id: string
           nome?: string | null
           objeto_id: string
+          ordem_semana_mes?: number | null
+          tipo_recorrencia?: string
         }
         Update: {
+          ajuste_fim_de_semana?: string | null
           ativo?: boolean
           atualizado_em?: string | null
           criado_em?: string | null
           data_especifica?: string | null
+          dia_mes?: number | null
           dia_semana?: number | null
           hora_fim?: string
           hora_inicio?: string
@@ -180,6 +190,8 @@ export type Database = {
           local_id?: string
           nome?: string | null
           objeto_id?: string
+          ordem_semana_mes?: number | null
+          tipo_recorrencia?: string
         }
         Relationships: [
           {
