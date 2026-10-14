@@ -8,6 +8,7 @@ import {
   type FecharRelatorioMasterInput,
   type RetificarRelatorioMasterInput,
 } from "@/lib/validations/fase-6";
+import { getMetasMroscData } from "@/lib/actions/metas";
 
 export interface RelatorioMasterCorpoExecutivo {
   identificacao: {
@@ -249,14 +250,8 @@ export async function compilarDadosRelatorioMaster(
 
   const materiais = materiaisRaw ?? [];
 
-  // 7. Metas do Objeto
-  const { data: metasRaw } = await supabase
-    .from("objeto_metas")
-    .select("numero_meta, descricao")
-    .eq("objeto_id", objetoId)
-    .order("numero_meta");
-
-  const metas = metasRaw ?? [];
+  // 7. Metas do Objeto com Apuração Real do MROSC (§3.11)
+  const metasData = await getMetasMroscData(objetoId, dataInicio, dataFim);
 
   // 8. Computação de Estatísticas dos Polos e Beneficiários
   let totalMatriculasAtivas = 0;
@@ -317,13 +312,18 @@ export async function compilarDadosRelatorioMaster(
     frequencia_media: p.total_alunos > 0 ? 82 : 100,
   }));
 
-  const metasResumo = metas.map((m) => ({
+  const metasResumo = metasData.metas.map((m) => ({
     numero_meta: m.numero_meta,
     descricao: m.descricao,
-    previsto: "100%",
-    realizado: "100%",
-    percentual: 100,
-    situacao: "Cumprida",
+    previsto: `${m.quantidade_prevista.toLocaleString("pt-BR")} ${m.unidade_medida}`,
+    realizado: `${m.quantidade_realizada.toLocaleString("pt-BR")} ${m.unidade_medida}`,
+    percentual: m.percentual,
+    situacao:
+      m.situacao === "cumprida"
+        ? "Cumprida"
+        : m.situacao === "parcial"
+        ? "Parcial"
+        : "Pendente",
   }));
 
   const corpoExecutivo: RelatorioMasterCorpoExecutivo = {

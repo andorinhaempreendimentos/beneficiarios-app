@@ -17,6 +17,8 @@ import {
   Award,
   CheckCircle2,
   FileSpreadsheet,
+  Target,
+  Package,
 } from "lucide-react";
 
 interface RelatoriosHubClientProps {
@@ -233,6 +235,80 @@ export function RelatoriosHubClient({
               <Link href="/relatorios/ponto">
                 <Button variant="outline" className="w-full text-xs gap-1.5 border-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/20">
                   Abrir Folha de Ponto da Equipe
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+
+          {/* Relatório Analítico C: Cumprimento de Metas MROSC */}
+          <Card className="hover:border-primary transition-all border-l-4 border-l-blue-600 shadow-xs">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
+                  Plano de Trabalho
+                </Badge>
+                <Target className="h-5 w-5 text-blue-600" />
+              </div>
+              <CardTitle className="text-base font-bold mt-2">
+                Demonstrativo de Metas Contratuais
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Apuração automatizada e declaratória dos indicadores pactuados com o Concedente (Art. 22, IV da Lei 13.019/2014).
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-2 text-xs bg-muted/40 p-2.5 rounded-md border">
+                <div>
+                  <span className="text-muted-foreground block">Mecanismo:</span>
+                  <span className="font-semibold">Automático & Declaratório</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground block">Classificação:</span>
+                  <span className="font-semibold text-blue-700 dark:text-blue-400">Cumprida, Parcial, Pendente</span>
+                </div>
+              </div>
+
+              <Link href="/metas">
+                <Button variant="outline" className="w-full text-xs gap-1.5 border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/20">
+                  Abrir Demonstrativo de Metas
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+
+          {/* Relatório Analítico D: Logística & Anexo VII */}
+          <Card className="hover:border-primary transition-all border-l-4 border-l-purple-600 shadow-xs">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 text-xs">
+                  Anexo VII MROSC
+                </Badge>
+                <Package className="h-5 w-5 text-purple-600" />
+              </div>
+              <CardTitle className="text-base font-bold mt-2">
+                Materiais e Uniformes Distribuídos
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Controle patrimonial de equipamentos de polo e extrato nominal de entrega de kits aos alunos com fé pública docente.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-2 text-xs bg-muted/40 p-2.5 rounded-md border">
+                <div>
+                  <span className="text-muted-foreground block">Eixos:</span>
+                  <span className="font-semibold">Coletivo & Individual</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground block">Fé Pública:</span>
+                  <span className="font-semibold text-purple-700 dark:text-purple-400">Carimbo do Instrutor</span>
+                </div>
+              </div>
+
+              <Link href="/materiais">
+                <Button variant="outline" className="w-full text-xs gap-1.5 border-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/20">
+                  Abrir Painel de Materiais & Uniformes
                   <ArrowRight className="h-3.5 w-3.5" />
                 </Button>
               </Link>
