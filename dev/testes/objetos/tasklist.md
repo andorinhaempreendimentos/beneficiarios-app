@@ -4,4 +4,4 @@
 - [x] **T02** — Integrar a seleção de Atividades/Modalidades com Sheet lateral inline dentro da Aba 3 do `ObjetoForm`
 - [x] **T03** — Integrar a criação do Quadro de Metas dentro da Aba 4 do `ObjetoForm`, consumindo reativamente o vocabulário preenchido na Aba 2
 - [x] **T04** — Atualizar Server Action `createObjeto` para persistir o Objeto, as modalidades vinculadas e as metas em lote no Supabase
-- [ ] **T05** — Validação Final de Tipagem (`tsc`), Build, Deploy na Vercel e Homologação com o usuário
+- [x] **T05** — Validação Final de Tipagem (`tsc`), Build, Deploy na Vercel e Homologação com o usuário
