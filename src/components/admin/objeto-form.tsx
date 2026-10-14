@@ -12,6 +12,22 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Sheet,
   SheetContent,
   SheetDescription,
@@ -33,9 +49,22 @@ import {
   Search,
   Loader2,
   CheckCircle2,
+  Sparkles,
+  Trash2,
 } from "lucide-react";
 
 import type { Database } from "@/lib/database.types";
+import type { TipoApuracaoMeta } from "@/lib/validations/fase-8";
+
+export interface FormMetaItem {
+  id?: string;
+  numero_meta: number;
+  descricao: string;
+  tipo_apuracao: TipoApuracaoMeta;
+  quantidade_prevista: number;
+  unidade_medida: string;
+  fonte_verificacao: string;
+}
 
 interface OptionItem {
   id: string;
@@ -53,6 +82,7 @@ interface ObjetoFormProps {
   concedentes?: OptionItem[];
   modalidades?: OptionItem[];
   initialModalidadeIds?: string[];
+  initialMetas?: FormMetaItem[];
 }
 
 const TABS = [
@@ -67,6 +97,7 @@ export function ObjetoForm({
   initialData,
   modalidades = [],
   initialModalidadeIds = [],
+  initialMetas = [],
 }: ObjetoFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -84,6 +115,19 @@ export function ObjetoForm({
     nome: "",
     descricao: "",
     ativo: true,
+  });
+
+  // Estado do Quadro de Metas (Aba 4)
+  const [metas, setMetas] = useState<FormMetaItem[]>(initialMetas);
+  const [metaModalOpen, setMetaModalOpen] = useState(false);
+  const [metaFormError, setMetaFormError] = useState<string | null>(null);
+  const [novaMeta, setNovaMeta] = useState({
+    numero_meta: 1,
+    descricao: "",
+    tipo_apuracao: "total_beneficiarios" as TipoApuracaoMeta,
+    quantidade_prevista: "",
+    unidade_medida: "",
+    fonte_verificacao: "",
   });
 
   const [formData, setFormData] = useState({
@@ -172,6 +216,121 @@ export function ObjetoForm({
     }
   }
 
+  // Vocabulário dinâmico reativo aos inputs da Aba 2
+  const tBen = formData.termo_beneficiario || "Aluno";
+  const tLoc = formData.termo_local || "Polo";
+  const tSess = formData.termo_sessao || "Aula";
+  const tGrp = formData.termo_grupo || "Turma";
+
+  const tipoApuracaoOpcoes: {
+    valor: TipoApuracaoMeta;
+    label: string;
+    unidadeSugerida: string;
+    fonteSugerida: string;
+  }[] = [
+    {
+      valor: "total_beneficiarios",
+      label: `Total de ${tBen}s Atendidos (Apuração Automática)`,
+      unidadeSugerida: `${tBen}s`,
+      fonteSugerida: `Sistema de Gestão e Matrículas Ativas de ${tBen}s`,
+    },
+    {
+      valor: "sessoes_realizadas",
+      label: `Total de ${tSess}s Realizadas (Apuração Automática)`,
+      unidadeSugerida: `${tSess}s`,
+      fonteSugerida: `Registro Eletrônico de ${tSess}s e Fotos Comprobatórias`,
+    },
+    {
+      valor: "frequencia_media",
+      label: `Frequência Média nas ${tSess}s (Apuração Automática)`,
+      unidadeSugerida: "%",
+      fonteSugerida: `Listas de Chamada Nominal e Frequência Registrada`,
+    },
+    {
+      valor: "total_locais",
+      label: `Total de ${tLoc}s Ativos (Apuração Automática)`,
+      unidadeSugerida: `${tLoc}s`,
+      fonteSugerida: `Cadastro Estrutural de ${tLoc}s de Atendimento`,
+    },
+    {
+      valor: "supervisoes_realizadas",
+      label: `Vistorias de Supervisão Homologadas (Apuração Automática)`,
+      unidadeSugerida: "Vistorias",
+      fonteSugerida: `Relatórios de Supervisão Presencial e Pareceres Finais`,
+    },
+    {
+      valor: "vulnerabilidade_social",
+      label: `${tBen}s em Vulnerabilidade Social (Apuração Automática)`,
+      unidadeSugerida: "%",
+      fonteSugerida: `Critérios de Vulnerabilidade nos Formulários de Inscrição`,
+    },
+    {
+      valor: "manual",
+      label: "Ação Declaratória / Comprovação Documental Externa",
+      unidadeSugerida: "Ações",
+      fonteSugerida: `Relatórios Periódicos, Atas e Documentos Anexados`,
+    },
+  ];
+
+  function handleOpenNovaMeta() {
+    const nextNum = metas.length + 1;
+    const defaultOpcao = tipoApuracaoOpcoes[0];
+    setNovaMeta({
+      numero_meta: nextNum,
+      descricao: "",
+      tipo_apuracao: defaultOpcao.valor,
+      quantidade_prevista: "",
+      unidade_medida: defaultOpcao.unidadeSugerida,
+      fonte_verificacao: defaultOpcao.fonteSugerida,
+    });
+    setMetaFormError(null);
+    setMetaModalOpen(true);
+  }
+
+  function handleTipoApuracaoChange(tipo: TipoApuracaoMeta) {
+    const opcao = tipoApuracaoOpcoes.find((o) => o.valor === tipo);
+    setNovaMeta((prev) => ({
+      ...prev,
+      tipo_apuracao: tipo,
+      unidade_medida: opcao?.unidadeSugerida || prev.unidade_medida,
+      fonte_verificacao: opcao?.fonteSugerida || prev.fonte_verificacao,
+    }));
+  }
+
+  function handleAdicionarMeta(e: React.FormEvent) {
+    e.preventDefault();
+    setMetaFormError(null);
+
+    const qtd = Number(novaMeta.quantidade_prevista);
+    if (isNaN(qtd) || qtd <= 0) {
+      setMetaFormError("A quantidade prevista deve ser um número maior que zero.");
+      return;
+    }
+
+    if (!novaMeta.descricao.trim()) {
+      setMetaFormError("A descrição da meta é obrigatória.");
+      return;
+    }
+
+    setMetas((prev) => [
+      ...prev,
+      {
+        numero_meta: Number(novaMeta.numero_meta),
+        descricao: novaMeta.descricao.trim(),
+        tipo_apuracao: novaMeta.tipo_apuracao,
+        quantidade_prevista: qtd,
+        unidade_medida: novaMeta.unidade_medida.trim() || "Unidades",
+        fonte_verificacao: novaMeta.fonte_verificacao.trim() || "Sistema de Gestão",
+      },
+    ]);
+
+    setMetaModalOpen(false);
+  }
+
+  function handleRemoverMeta(index: number) {
+    setMetas((prev) => prev.filter((_, idx) => idx !== index));
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -180,6 +339,7 @@ export function ObjetoForm({
     const payload = {
       ...formData,
       modalidades_ids: selectedModalidadeIds,
+      metas: metas,
     };
 
     let res;
@@ -524,27 +684,107 @@ export function ObjetoForm({
           </Card>
         </TabsContent>
 
-        {/* Aba 4: Quadro de Metas (Estruturada para T03) */}
+        {/* Aba 4: Quadro de Metas */}
         <TabsContent value="metas">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5 text-primary" />
-                <span>Quadro de Metas do Projeto (MROSC)</span>
-              </CardTitle>
-              <CardDescription>
-                Definição de metas quantitativas utilizando os termos definidos: {formData.termo_beneficiario}s,{" "}
-                {formData.termo_sessao}s e {formData.termo_local}s.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="p-6 rounded-lg border border-dashed border-border text-center text-muted-foreground">
-                <Target className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm font-medium">Metas contratuais atreladas às entidades</p>
-                <p className="text-xs mt-1">
-                  Esta seção permite definir metas atreladas aos {formData.termo_beneficiario}s e {formData.termo_sessao}s do projeto.
-                </p>
+            <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5 text-primary" />
+                  <span>Quadro de Metas do Projeto (MROSC)</span>
+                </CardTitle>
+                <CardDescription className="mt-1">
+                  Defina as metas quantitativas pactuadas para este projeto. Os cálculos se adaptam automaticamente
+                  aos termos: {tBen}s, {tSess}s e {tLoc}s definidos na Aba de Vocabulário.
+                </CardDescription>
               </div>
+
+              <Button
+                type="button"
+                onClick={handleOpenNovaMeta}
+                className="gap-2 shrink-0"
+              >
+                <Plus className="h-4 w-4" />
+                <span>+ Adicionar Meta</span>
+              </Button>
+            </CardHeader>
+
+            <CardContent>
+              {metas.length === 0 ? (
+                <div className="p-8 text-center rounded-lg border border-dashed border-border text-muted-foreground">
+                  <Target className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm font-medium">Nenhuma meta contratual definida ainda.</p>
+                  <p className="text-xs mt-1 max-w-md mx-auto">
+                    Adicione metas para acompanhar a execução do projeto. Metas automáticas apuram em tempo real
+                    o total de {tBen}s matriculados, {tSess}s realizadas ou {tLoc}s ativos.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleOpenNovaMeta}
+                    className="mt-4 gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>Adicionar Primeira Meta</span>
+                  </Button>
+                </div>
+              ) : (
+                <div className="rounded-md border border-border overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[80px]">Nº</TableHead>
+                        <TableHead>Descrição da Meta</TableHead>
+                        <TableHead>Tipo de Apuração</TableHead>
+                        <TableHead className="w-[140px] text-right">Meta Prevista</TableHead>
+                        <TableHead className="w-[80px] text-right">Ação</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {metas.map((m, idx) => {
+                        const opcao = tipoApuracaoOpcoes.find((o) => o.valor === m.tipo_apuracao);
+                        return (
+                          <TableRow key={idx}>
+                            <TableCell className="font-bold text-foreground">
+                              Meta {m.numero_meta}
+                            </TableCell>
+                            <TableCell>
+                              <div className="font-medium text-foreground">{m.descricao}</div>
+                              <div className="text-xs text-muted-foreground mt-0.5">
+                                Fonte: {m.fonte_verificacao}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-xs text-muted-foreground">
+                              <span className="inline-flex items-center gap-1.5">
+                                {m.tipo_apuracao !== "manual" && (
+                                  <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
+                                )}
+                                <span>{opcao?.label || m.tipo_apuracao}</span>
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-right font-bold text-foreground">
+                              {m.quantidade_prevista} {m.unidade_medida}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive hover:text-destructive"
+                                onClick={() => handleRemoverMeta(idx)}
+                                title="Remover meta"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -764,6 +1004,140 @@ export function ObjetoForm({
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Modal Dialog para Criação de Nova Meta */}
+      <Dialog open={metaModalOpen} onOpenChange={setMetaModalOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Target className="h-5 w-5 text-primary" />
+              <span>Nova Meta Contratual (MROSC)</span>
+            </DialogTitle>
+            <DialogDescription>
+              Defina os parâmetros da meta pactuada. Os tipos de apuração automática calculam os resultados em tempo real baseados nas informações operacionais do sistema.
+            </DialogDescription>
+          </DialogHeader>
+
+          {metaFormError && (
+            <div className="flex items-center gap-2 p-3 rounded-lg text-sm bg-destructive/10 text-destructive border border-destructive/20">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>{metaFormError}</span>
+            </div>
+          )}
+
+          <div className="space-y-4 py-2">
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-1 col-span-1">
+                <Label htmlFor="meta_num">Nº da Meta *</Label>
+                <Input
+                  id="meta_num"
+                  type="number"
+                  min={1}
+                  value={novaMeta.numero_meta}
+                  onChange={(e) =>
+                    setNovaMeta((prev) => ({ ...prev, numero_meta: Number(e.target.value) }))
+                  }
+                  required
+                />
+              </div>
+
+              <div className="space-y-1 col-span-2">
+                <Label htmlFor="meta_tipo">Tipo de Apuração *</Label>
+                <select
+                  id="meta_tipo"
+                  value={novaMeta.tipo_apuracao}
+                  onChange={(e) => handleTipoApuracaoChange(e.target.value as TipoApuracaoMeta)}
+                  className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                  required
+                >
+                  {tipoApuracaoOpcoes.map((opcao) => (
+                    <option key={opcao.valor} value={opcao.valor}>
+                      {opcao.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="meta_desc">Descrição da Meta *</Label>
+              <Textarea
+                id="meta_desc"
+                value={novaMeta.descricao}
+                onChange={(e) =>
+                  setNovaMeta((prev) => ({ ...prev, descricao: e.target.value }))
+                }
+                placeholder={`Ex: Atender e manter ativos no mínimo 200 ${tBen.toLowerCase()}s com frequência regular nas atividades...`}
+                rows={3}
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="meta_qtd">Quantidade Prevista *</Label>
+                <Input
+                  id="meta_qtd"
+                  type="number"
+                  min={0.01}
+                  step="any"
+                  value={novaMeta.quantidade_prevista}
+                  onChange={(e) =>
+                    setNovaMeta((prev) => ({ ...prev, quantidade_prevista: e.target.value }))
+                  }
+                  placeholder="Ex: 200"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="meta_unidade">Unidade de Medida *</Label>
+                <Input
+                  id="meta_unidade"
+                  value={novaMeta.unidade_medida}
+                  onChange={(e) =>
+                    setNovaMeta((prev) => ({ ...prev, unidade_medida: e.target.value }))
+                  }
+                  placeholder={`Ex: ${tBen}s, ${tSess}s, %`}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="meta_fonte">Fonte de Verificação *</Label>
+              <Input
+                id="meta_fonte"
+                value={novaMeta.fonte_verificacao}
+                onChange={(e) =>
+                  setNovaMeta((prev) => ({ ...prev, fonte_verificacao: e.target.value }))
+                }
+                placeholder="Ex: Sistema de Gestão e Listas de Presença"
+                required
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setMetaModalOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={handleAdicionarMeta}
+              className="gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Adicionar Meta</span>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </form>
   );
 }
+
