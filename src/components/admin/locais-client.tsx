@@ -348,14 +348,14 @@ export function LocaisClient({
                 <TableHead>Projeto</TableHead>
                 <TableHead>Região Obrigatória</TableHead>
                 <TableHead>Localização</TableHead>
-                <TableHead>Turmas</TableHead>
+                <TableHead>Grupos</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredLocais.map((loc) => {
-                const qtdTurmas = loc.grupos?.length ?? 0;
+                const qtdGrupos = loc.grupos?.length ?? 0;
                 return (
                   <TableRow key={loc.id}>
                     <TableCell className="font-medium">
@@ -388,7 +388,7 @@ export function LocaisClient({
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline">
-                        {qtdTurmas} {qtdTurmas === 1 ? "turma" : "turmas"}
+                        {qtdGrupos} {qtdGrupos === 1 ? "grupo" : "grupos"}
                       </Badge>
                     </TableCell>
                     <TableCell>

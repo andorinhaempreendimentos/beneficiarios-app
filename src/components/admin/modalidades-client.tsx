@@ -400,7 +400,7 @@ export function ModalidadesClient({ initialModalidades }: ModalidadesClientProps
         title={toggleTarget?.ativo ? "Desativar Modalidade" : "Ativar Modalidade"}
         description={
           toggleTarget?.ativo
-            ? `Tem certeza que deseja desativar a modalidade "${toggleTarget.nome}"? Ela não poderá ser selecionada em novas turmas ou projetos.`
+            ? `Tem certeza que deseja desativar a modalidade "${toggleTarget.nome}"? Ela não poderá ser selecionada em novos grupos ou projetos.`
             : `Deseja reativar a modalidade "${toggleTarget?.nome}"?`
         }
         confirmLabel={toggleTarget?.ativo ? "Desativar" : "Ativar"}

@@ -55,7 +55,7 @@ export default async function AdminPage() {
     },
     {
       title: "Polos e Locais de Atendimento",
-      description: "Espaços físicos vinculados a regiões onde ocorrem aulas e vistorias.",
+      description: "Espaços físicos vinculados a regiões onde ocorrem sessões e vistorias.",
       href: "/admin/locais",
       count: metrics.totalLocais,
       countLabel: "polos",

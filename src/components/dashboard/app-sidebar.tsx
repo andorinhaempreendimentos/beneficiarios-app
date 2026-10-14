@@ -33,8 +33,9 @@ const navPrincipal = [
 
 const navGestao = [
   { label: "Beneficiários", href: "/beneficiarios", icon: Users, termoKey: "termo_beneficiario" as const },
-  { label: "Turmas", href: "/turmas", icon: ClipboardList, termoKey: "termo_grupo" as const },
-  { label: "Agenda", href: "/agenda", icon: Calendar, termoKey: "termo_bloco" as const },
+  { label: "Matrículas", href: "/matriculas", icon: UserCheck },
+  { label: "Grupos", href: "/grupos", icon: ClipboardList, termoKey: "termo_grupo" as const },
+  { label: "Calendário", href: "/calendario", icon: Calendar, termoKey: "termo_bloco" as const },
   { label: "Sessões", href: "/sessoes", icon: UserCheck, termoKey: "termo_sessao" as const },
 ];
 

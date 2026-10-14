@@ -17,6 +17,8 @@ import {
   Landmark,
   Calendar,
   Plus,
+  HelpCircle,
+  ExternalLink,
 } from "lucide-react";
 import type { Database } from "@/lib/database.types";
 
@@ -134,7 +136,7 @@ export function ObjetoDetalhesClient({
 
       {/* Abas de Navegação e Configuração */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:w-fit">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 lg:w-fit">
           <TabsTrigger value="geral" className="gap-2">
             <FileText className="h-4 w-4" />
             <span>Dados Gerais</span>
@@ -150,6 +152,10 @@ export function ObjetoDetalhesClient({
           <TabsTrigger value="locais" className="gap-2">
             <MapPin className="h-4 w-4" />
             <span>Polos ({objeto.locais?.length ?? 0})</span>
+          </TabsTrigger>
+          <TabsTrigger value="perguntas" className="gap-2">
+            <HelpCircle className="h-4 w-4" />
+            <span>Formulário de Inscrição</span>
           </TabsTrigger>
         </TabsList>
 
@@ -324,6 +330,37 @@ export function ObjetoDetalhesClient({
               </Table>
             </div>
           )}
+        </TabsContent>
+
+        {/* Aba 5: Formulário de Inscrição & Perguntas */}
+        <TabsContent value="perguntas" className="space-y-4">
+          <Card>
+            <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <HelpCircle className="h-5 w-5 text-primary" />
+                  Formulário Híbrido de Inscrição (§3.3.2)
+                </CardTitle>
+                <CardDescription>
+                  Configure perguntas customizadas para este convênio, visualizadas tanto na autoinscrição pública da comunidade quanto na triagem da equipe.
+                </CardDescription>
+              </div>
+              <Button size="sm" render={<Link href={`/admin/objetos/${objeto.id}/perguntas`} />} className="gap-1.5 shrink-0">
+                <span>Abrir Construtor de Perguntas</span>
+                <ExternalLink className="h-4 w-4" />
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-2">
+                <h4 className="text-sm font-semibold text-foreground">Como funciona o Formulário Híbrido:</h4>
+                <ul className="text-xs text-muted-foreground space-y-1 list-disc pl-4">
+                  <li><strong>Campos Civis Padrão:</strong> Nome, CPF único, Data de Nascimento, Telefone e Responsável são fixos e imutáveis por lei federal.</li>
+                  <li><strong>Campos Específicos:</strong> Adicione perguntas como tamanho do uniforme, turno escolar, atestado médico ou documentos com upload.</li>
+                  <li><strong>Simulador Mobile:</strong> Visualize em tempo real exatamente como a tela aparecerá no smartphone do cidadão.</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

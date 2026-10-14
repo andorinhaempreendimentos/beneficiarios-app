@@ -2210,6 +2210,22 @@ export type Database = {
         Args: { p_user_id: string; p_nova_senha: string }
         Returns: boolean
       }
+      obter_contagem_vagas_grupos: {
+        Args: { p_grupo_ids: string[] }
+        Returns: {
+          grupo_id: string
+          total_ativas: number
+          total_fila: number
+        }[]
+      }
+      buscar_beneficiario_por_cpf: {
+        Args: { p_cpf: string }
+        Returns: Json
+      }
+      submeter_autoinscricao: {
+        Args: { p_dados: Json }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
