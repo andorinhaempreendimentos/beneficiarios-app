@@ -5,6 +5,7 @@ import { getOrganizacoes } from "@/lib/actions/organizacoes";
 import { getConcedentes } from "@/lib/actions/concedentes";
 import { getModalidades } from "@/lib/actions/modalidades";
 import { getModalidadesDoObjeto } from "@/lib/actions/objeto-modalidades";
+import { getMetasMroscData } from "@/lib/actions/metas";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { ObjetoDetalhesClient } from "@/components/admin/objeto-detalhes-client";
 
@@ -38,12 +39,14 @@ export default async function ObjetoDetalhesPage({
     notFound();
   }
 
-  const [organizacoes, concedentes, modalidades, modalidadesVinculadas] = await Promise.all([
-    getOrganizacoes(),
-    getConcedentes(),
-    getModalidades(),
-    getModalidadesDoObjeto(id),
-  ]);
+  const [organizacoes, concedentes, modalidades, modalidadesVinculadas, metasData] =
+    await Promise.all([
+      getOrganizacoes(),
+      getConcedentes(),
+      getModalidades(),
+      getModalidadesDoObjeto(id),
+      getMetasMroscData(id),
+    ]);
 
   return (
     <div className="space-y-6">
@@ -59,6 +62,7 @@ export default async function ObjetoDetalhesPage({
         concedentes={concedentes}
         modalidades={modalidades}
         modalidadesVinculadas={modalidadesVinculadas}
+        metasData={metasData}
       />
     </div>
   );

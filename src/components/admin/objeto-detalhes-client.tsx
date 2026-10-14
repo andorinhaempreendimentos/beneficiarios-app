@@ -9,7 +9,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ObjetoForm } from "@/components/admin/objeto-form";
 import { ObjetoModalidadesTab } from "@/components/admin/objeto-modalidades-tab";
+import { ObjetoMetasTab } from "@/components/admin/objeto-metas-tab";
 import type { ModalidadeVinculada } from "@/lib/actions/objeto-modalidades";
+import type { PainelMetasMroscData } from "@/lib/actions/metas";
 import {
   FileText,
   Languages,
@@ -22,6 +24,7 @@ import {
   HelpCircle,
   ExternalLink,
   Activity,
+  Target,
 } from "lucide-react";
 import type { Database } from "@/lib/database.types";
 
@@ -46,6 +49,7 @@ interface ObjetoDetalhesClientProps {
   concedentes: ConcedenteRow[];
   modalidades: ModalidadeRow[];
   modalidadesVinculadas?: ModalidadeVinculada[];
+  metasData?: PainelMetasMroscData;
 }
 
 export function ObjetoDetalhesClient({
@@ -54,6 +58,7 @@ export function ObjetoDetalhesClient({
   concedentes,
   modalidades,
   modalidadesVinculadas = [],
+  metasData,
 }: ObjetoDetalhesClientProps) {
   const [activeTab, setActiveTab] = useState("geral");
 
@@ -154,6 +159,10 @@ export function ObjetoDetalhesClient({
             <Activity className="h-4 w-4" />
             <span>Atividades ({modalidadesVinculadas?.length ?? 0})</span>
           </TabsTrigger>
+          <TabsTrigger value="metas" className="gap-2">
+            <Target className="h-4 w-4" />
+            <span>Metas ({metasData?.metas?.length ?? 0})</span>
+          </TabsTrigger>
           <TabsTrigger value="regioes" className="gap-2">
             <Compass className="h-4 w-4" />
             <span>Regiões ({objeto.regioes?.length ?? 0})</span>
@@ -187,6 +196,17 @@ export function ObjetoDetalhesClient({
             termoGrupo={objeto.termo_grupo}
           />
         </TabsContent>
+
+        {/* Aba Metas do Projeto (MROSC com Vocabulário Dinâmico) */}
+        {metasData && (
+          <TabsContent value="metas">
+            <ObjetoMetasTab
+              objetoId={objeto.id}
+              initialData={metasData}
+              vocabulario={objeto}
+            />
+          </TabsContent>
+        )}
 
         {/* Aba 2: Vocabulário Dinâmico (§4.3) */}
         <TabsContent value="vocabulario">
