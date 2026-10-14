@@ -7,4 +7,4 @@
 - [x] **T05** — Criação da tabela `objeto_modalidades` no Supabase com RLS e Server Actions de relacionamento
 - [x] **T06** — Implementação da aba dedicada de "Atividades / Modalidades" em `/admin/objetos/[id]` com seleção do catálogo e Sheet lateral deslizante para criação inline
 - [x] **T07** — Implementação da aba dedicada de "Metas do Projeto" em `/admin/objetos/[id]` com vocabulário dinâmico
-- [ ] **T08** — Validação Final de Tipagem (`tsc`), Build, Deploy na Vercel e Homologação com o usuário
+- [x] **T08** — Validação Final de Tipagem (`tsc`), Build, Deploy na Vercel e Homologação com o usuário
