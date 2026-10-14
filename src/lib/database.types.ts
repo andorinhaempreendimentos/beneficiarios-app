@@ -837,6 +837,45 @@ export type Database = {
           },
         ]
       }
+      objeto_modalidades: {
+        Row: {
+          ativo: boolean
+          criado_em: string | null
+          id: string
+          modalidade_id: string
+          objeto_id: string
+        }
+        Insert: {
+          ativo?: boolean
+          criado_em?: string | null
+          id?: string
+          modalidade_id: string
+          objeto_id: string
+        }
+        Update: {
+          ativo?: boolean
+          criado_em?: string | null
+          id?: string
+          modalidade_id?: string
+          objeto_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "objeto_modalidades_modalidade_id_fkey"
+            columns: ["modalidade_id"]
+            isOneToOne: false
+            referencedRelation: "modalidades"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "objeto_modalidades_objeto_id_fkey"
+            columns: ["objeto_id"]
+            isOneToOne: false
+            referencedRelation: "objetos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       objeto_metas: {
         Row: {
           anexos_urls: Json | null
