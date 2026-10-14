@@ -24,12 +24,11 @@ interface ObjetoFormProps {
   initialData?: Partial<Database["public"]["Tables"]["objetos"]["Row"]>;
   organizacoes?: OptionItem[];
   concedentes?: OptionItem[];
-  modalidades: OptionItem[];
+  modalidades?: OptionItem[];
 }
 
 export function ObjetoForm({
   initialData,
-  modalidades,
 }: ObjetoFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -133,7 +132,7 @@ export function ObjetoForm({
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="tipo">Formato do Projeto (Agnóstico) *</Label>
             <select
               id="tipo"
@@ -145,24 +144,6 @@ export function ObjetoForm({
             >
               <option value="continuo">Contínuo (Escolinhas, rotinas periódicas recorrentes)</option>
               <option value="pontual">Pontual (Festivais, torneios, corridas de rua)</option>
-            </select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="modalidade_principal_id">Modalidade Principal (Opcional)</Label>
-            <select
-              id="modalidade_principal_id"
-              name="modalidade_principal_id"
-              value={formData.modalidade_principal_id}
-              onChange={handleInputChange}
-              className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-            >
-              <option value="">Selecione uma modalidade (ou deixe em branco)</option>
-              {modalidades.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.nome}
-                </option>
-              ))}
             </select>
           </div>
 

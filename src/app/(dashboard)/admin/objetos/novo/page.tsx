@@ -1,5 +1,4 @@
 import React from "react";
-import { getModalidades } from "@/lib/actions/modalidades";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { ObjetoForm } from "@/components/admin/objeto-form";
 
@@ -7,9 +6,7 @@ export const metadata = {
   title: "Novo Projeto | Painel Administrativo",
 };
 
-export default async function NovoObjetoPage() {
-  const modalidades = await getModalidades();
-
+export default function NovoObjetoPage() {
   return (
     <div className="space-y-6">
       <AdminPageHeader
@@ -18,7 +15,7 @@ export default async function NovoObjetoPage() {
         backHref="/admin/objetos"
         backLabel="Voltar para Projetos"
       />
-      <ObjetoForm modalidades={modalidades} />
+      <ObjetoForm />
     </div>
   );
 }
