@@ -8,7 +8,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, ArrowRight } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertCircle,
+  ArrowRight,
+  ArrowLeft,
+  Check,
+  FileText,
+  Languages,
+  Activity,
+  Target,
+  ShieldCheck,
+  Save,
+} from "lucide-react";
 
 import type { Database } from "@/lib/database.types";
 
@@ -18,6 +30,8 @@ interface OptionItem {
   razao_social?: string;
   nome_fantasia?: string | null;
   sigla?: string | null;
+  descricao?: string | null;
+  ativo?: boolean;
 }
 
 interface ObjetoFormProps {
@@ -27,12 +41,22 @@ interface ObjetoFormProps {
   modalidades?: OptionItem[];
 }
 
+const TABS = [
+  { id: "identificacao", label: "Identificação & Vigência", icon: FileText },
+  { id: "vocabulario", label: "Vocabulário Dinâmico", icon: Languages },
+  { id: "atividades", label: "Atividades & Modalidades", icon: Activity },
+  { id: "metas", label: "Quadro de Metas", icon: Target },
+  { id: "juridico", label: "Dados Jurídicos", icon: ShieldCheck },
+] as const;
+
 export function ObjetoForm({
   initialData,
+  modalidades = [],
 }: ObjetoFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<string>("identificacao");
 
   const [formData, setFormData] = useState({
     nome: initialData?.nome ?? "",
@@ -76,6 +100,20 @@ export function ObjetoForm({
     }
   }
 
+  function handleNextTab() {
+    const currentIndex = TABS.findIndex((t) => t.id === activeTab);
+    if (currentIndex < TABS.length - 1) {
+      setActiveTab(TABS[currentIndex + 1].id);
+    }
+  }
+
+  function handlePrevTab() {
+    const currentIndex = TABS.findIndex((t) => t.id === activeTab);
+    if (currentIndex > 0) {
+      setActiveTab(TABS[currentIndex - 1].id);
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -111,274 +149,385 @@ export function ObjetoForm({
         </div>
       )}
 
-      {/* 1. Estrutura e Formato (Agnosticidade) */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Identificação & Formato Operacional</CardTitle>
-          <CardDescription>
-            Defina o nome do projeto e seu formato estrutural (contínuo com rotinas periódicas ou pontual para eventos).
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2 sm:col-span-2">
-            <Label htmlFor="nome">Nome do Projeto / Objeto *</Label>
-            <Input
-              id="nome"
-              name="nome"
-              value={formData.nome}
-              onChange={handleInputChange}
-              placeholder="Ex: Escolinha de Esportes Comunidade Viva 2026"
-              required
-            />
-          </div>
+      {/* Navegação por Abas do Formulário */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="flex flex-wrap w-full gap-1 bg-muted/60 p-1 rounded-lg">
+          {TABS.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <TabsTrigger key={tab.id} value={tab.id} className="gap-2">
+                <Icon className="h-4 w-4" />
+                <span>{tab.label}</span>
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
 
-          <div className="space-y-2 sm:col-span-2">
-            <Label htmlFor="tipo">Formato do Projeto (Agnóstico) *</Label>
-            <select
-              id="tipo"
-              name="tipo"
-              value={formData.tipo}
-              onChange={handleInputChange}
-              className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-              required
+        {/* Aba 1: Identificação & Vigência */}
+        <TabsContent value="identificacao">
+          <Card>
+            <CardHeader>
+              <CardTitle>Identificação & Formato Operacional</CardTitle>
+              <CardDescription>
+                Defina o nome do projeto e seu formato estrutural (contínuo com rotinas periódicas ou pontual para eventos).
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="nome">Nome do Projeto / Objeto *</Label>
+                <Input
+                  id="nome"
+                  name="nome"
+                  value={formData.nome}
+                  onChange={handleInputChange}
+                  placeholder="Ex: Escolinha de Esportes Comunidade Viva 2026"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="tipo">Formato do Projeto (Agnóstico) *</Label>
+                <select
+                  id="tipo"
+                  name="tipo"
+                  value={formData.tipo}
+                  onChange={handleInputChange}
+                  className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                  required
+                >
+                  <option value="continuo">Contínuo (Escolinhas, rotinas periódicas recorrentes)</option>
+                  <option value="pontual">Pontual (Festivais, torneios, corridas de rua)</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="data_inicio">Data de Início da Vigência *</Label>
+                <Input
+                  id="data_inicio"
+                  name="data_inicio"
+                  type="date"
+                  value={formData.data_inicio}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="data_fim">Data de Término da Vigência *</Label>
+                <Input
+                  id="data_fim"
+                  name="data_fim"
+                  type="date"
+                  value={formData.data_fim}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="descricao">Descrição / Resumo do Objeto</Label>
+                <Textarea
+                  id="descricao"
+                  name="descricao"
+                  value={formData.descricao}
+                  onChange={handleInputChange}
+                  placeholder="Finalidade das atividades esportivas, público-alvo prioritário e metas pactuadas."
+                  rows={3}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Aba 2: Vocabulário Dinâmico (§4.3) */}
+        <TabsContent value="vocabulario">
+          <Card className="border-primary/20">
+            <CardHeader>
+              <CardTitle>Vocabulário Dinâmico do Projeto (§4.3)</CardTitle>
+              <CardDescription>
+                Personalize a linguagem da interface para este projeto. O sistema adapta os rótulos de tela de acordo com os termos escolhidos abaixo (zero hardcoded).
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1">
+                <Label htmlFor="termo_beneficiario">Termo para os Atendidos *</Label>
+                <Input
+                  id="termo_beneficiario"
+                  name="termo_beneficiario"
+                  value={formData.termo_beneficiario}
+                  onChange={handleInputChange}
+                  placeholder="Ex: Aluno, Atleta, Corredor, Participante"
+                  required
+                />
+                <p className="text-[11px] text-muted-foreground">Como o cidadão atendido será chamado nas chamadas e relatórios.</p>
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="termo_instrutor">Termo para o Instrutor *</Label>
+                <Input
+                  id="termo_instrutor"
+                  name="termo_instrutor"
+                  value={formData.termo_instrutor}
+                  onChange={handleInputChange}
+                  placeholder="Ex: Professor, Educador, Monitor, Treinador"
+                  required
+                />
+                <p className="text-[11px] text-muted-foreground">Profissional de campo que ministra as atividades práticas.</p>
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="termo_grupo">Termo para Grupo / Turma *</Label>
+                <Input
+                  id="termo_grupo"
+                  name="termo_grupo"
+                  value={formData.termo_grupo}
+                  onChange={handleInputChange}
+                  placeholder="Ex: Turma, Chave, Pelotão, Categoria"
+                  required
+                />
+                <p className="text-[11px] text-muted-foreground">Unidade de reserva de vagas por idade/horário.</p>
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="termo_sessao">Termo para Sessão de Atendimento *</Label>
+                <Input
+                  id="termo_sessao"
+                  name="termo_sessao"
+                  value={formData.termo_sessao}
+                  onChange={handleInputChange}
+                  placeholder="Ex: Aula, Treino, Largada, Encontro"
+                  required
+                />
+                <p className="text-[11px] text-muted-foreground">Ocorrência individual prática onde ocorre chamada e fotos.</p>
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="termo_bloco">Termo para Grade / Bloco *</Label>
+                <Input
+                  id="termo_bloco"
+                  name="termo_bloco"
+                  value={formData.termo_bloco}
+                  onChange={handleInputChange}
+                  placeholder="Ex: Horário de Aula, Bateria, Etapa"
+                  required
+                />
+                <p className="text-[11px] text-muted-foreground">Faixa horária semanal ou data avulsa na agenda.</p>
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="termo_local">Termo para Local / Polo *</Label>
+                <Input
+                  id="termo_local"
+                  name="termo_local"
+                  value={formData.termo_local}
+                  onChange={handleInputChange}
+                  placeholder="Ex: Polo, Núcleo, Arena, Circuito"
+                  required
+                />
+                <p className="text-[11px] text-muted-foreground">Espaço físico onde ocorrem os atendimentos.</p>
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="termo_materiais_coletivos">Termo para Materiais Coletivos *</Label>
+                <Input
+                  id="termo_materiais_coletivos"
+                  name="termo_materiais_coletivos"
+                  value={formData.termo_materiais_coletivos}
+                  onChange={handleInputChange}
+                  placeholder="Ex: Materiais Esportivos, Equipamentos"
+                  required
+                />
+                <p className="text-[11px] text-muted-foreground">Itens de treino alocados no polo físico.</p>
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="termo_materiais_concedidos">Termo para Materiais Individuais *</Label>
+                <Input
+                  id="termo_materiais_concedidos"
+                  name="termo_materiais_concedidos"
+                  value={formData.termo_materiais_concedidos}
+                  onChange={handleInputChange}
+                  placeholder="Ex: Uniformes, Kits Individuais, Kits de Corrida"
+                  required
+                />
+                <p className="text-[11px] text-muted-foreground">Itens entregues individualmente ao participante.</p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Aba 3: Atividades & Modalidades (Estruturada para T02) */}
+        <TabsContent value="atividades">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="h-5 w-5 text-primary" />
+                <span>Atividades & Modalidades Autorizadas</span>
+              </CardTitle>
+              <CardDescription>
+                Selecione quais atividades esportivas do catálogo estarão ativas para este projeto.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="p-6 rounded-lg border border-dashed border-border text-center text-muted-foreground">
+                <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm font-medium">Configuração de modalidades vinculadas</p>
+                <p className="text-xs mt-1">
+                  Esta seção permite selecionar atividades do catálogo e cadastrar novas modalidades inline via Sheet.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Aba 4: Quadro de Metas (Estruturada para T03) */}
+        <TabsContent value="metas">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5 text-primary" />
+                <span>Quadro de Metas do Projeto (MROSC)</span>
+              </CardTitle>
+              <CardDescription>
+                Definição de metas quantitativas utilizando os termos definidos: {formData.termo_beneficiario}s,{" "}
+                {formData.termo_sessao}s e {formData.termo_local}s.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="p-6 rounded-lg border border-dashed border-border text-center text-muted-foreground">
+                <Target className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm font-medium">Metas contratuais atreladas às entidades</p>
+                <p className="text-xs mt-1">
+                  Esta seção permite definir metas atreladas aos {formData.termo_beneficiario}s e {formData.termo_sessao}s do projeto.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Aba 5: Metadados Jurídicos e Contratuais */}
+        <TabsContent value="juridico">
+          <Card>
+            <CardHeader>
+              <CardTitle>Dados Jurídicos & Prestação de Contas</CardTitle>
+              <CardDescription>
+                Informações documentais exigidas nos cabeçalhos oficiais dos relatórios de auditoria e MROSC.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="termo_parceria_numero">Nº do Termo de Colaboração / Fomento</Label>
+                <Input
+                  id="termo_parceria_numero"
+                  name="termo_parceria_numero"
+                  value={formData.termo_parceria_numero}
+                  onChange={handleInputChange}
+                  placeholder="Ex: Termo de Colaboração nº 042/2026"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="processo_administrativo">Nº do Processo Administrativo</Label>
+                <Input
+                  id="processo_administrativo"
+                  name="processo_administrativo"
+                  value={formData.processo_administrativo}
+                  onChange={handleInputChange}
+                  placeholder="Ex: Processo nº 6019.2025/0001234-5"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edital_chamamento">Nº do Edital de Chamamento Público</Label>
+                <Input
+                  id="edital_chamamento"
+                  name="edital_chamamento"
+                  value={formData.edital_chamamento}
+                  onChange={handleInputChange}
+                  placeholder="Ex: Edital nº 008/SEME/2025"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="representante_legal_nome">Representante Legal da OSC</Label>
+                <Input
+                  id="representante_legal_nome"
+                  name="representante_legal_nome"
+                  value={formData.representante_legal_nome}
+                  onChange={handleInputChange}
+                  placeholder="Nome do presidente ou procurador que assina"
+                />
+              </div>
+
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="representante_legal_cargo">Cargo do Representante Legal</Label>
+                <Input
+                  id="representante_legal_cargo"
+                  name="representante_legal_cargo"
+                  value={formData.representante_legal_cargo}
+                  onChange={handleInputChange}
+                  placeholder="Ex: Diretor Presidente"
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Barra de Navegação e Submissão entre Etapas */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-border mt-6">
+        <div>
+          {activeTab !== "identificacao" && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handlePrevTab}
+              disabled={loading}
+              className="gap-2 w-full sm:w-auto"
             >
-              <option value="continuo">Contínuo (Escolinhas, rotinas periódicas recorrentes)</option>
-              <option value="pontual">Pontual (Festivais, torneios, corridas de rua)</option>
-            </select>
-          </div>
+              <ArrowLeft className="h-4 w-4" />
+              <span>Voltar</span>
+            </Button>
+          )}
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="data_inicio">Data de Início da Vigência *</Label>
-            <Input
-              id="data_inicio"
-              name="data_inicio"
-              type="date"
-              value={formData.data_inicio}
-              onChange={handleInputChange}
-              required
-            />
-          </div>
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => router.back()}
+            disabled={loading}
+          >
+            Cancelar
+          </Button>
 
-          <div className="space-y-2">
-            <Label htmlFor="data_fim">Data de Término da Vigência *</Label>
-            <Input
-              id="data_fim"
-              name="data_fim"
-              type="date"
-              value={formData.data_fim}
-              onChange={handleInputChange}
-              required
-            />
-          </div>
+          {/* Salvar Rápido disponível em qualquer aba */}
+          <Button
+            type="submit"
+            variant="secondary"
+            disabled={loading}
+            className="gap-2"
+          >
+            <Save className="h-4 w-4" />
+            <span>Salvar Rascunho</span>
+          </Button>
 
-          <div className="space-y-2 sm:col-span-2">
-            <Label htmlFor="descricao">Descrição / Resumo do Objeto</Label>
-            <Textarea
-              id="descricao"
-              name="descricao"
-              value={formData.descricao}
-              onChange={handleInputChange}
-              placeholder="Finalidade das atividades esportivas, público-alvo prioritário e metas pactuadas."
-              rows={3}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* 2. Vocabulário Dinâmico (§4.3) */}
-      <Card className="border-primary/20">
-        <CardHeader>
-          <CardTitle>Vocabulário Dinâmico do Projeto (§4.3)</CardTitle>
-          <CardDescription>
-            Personalize a linguagem da interface para este projeto. O sistema adapta os rótulos de tela de acordo com os termos escolhidos abaixo (zero hardcoded).
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1">
-            <Label htmlFor="termo_beneficiario">Termo para os Atendidos *</Label>
-            <Input
-              id="termo_beneficiario"
-              name="termo_beneficiario"
-              value={formData.termo_beneficiario}
-              onChange={handleInputChange}
-              placeholder="Ex: Aluno, Atleta, Corredor, Participante"
-              required
-            />
-            <p className="text-[11px] text-muted-foreground">Como o cidadão atendido será chamado nas chamadas e relatórios.</p>
-          </div>
-
-          <div className="space-y-1">
-            <Label htmlFor="termo_instrutor">Termo para o Instrutor *</Label>
-            <Input
-              id="termo_instrutor"
-              name="termo_instrutor"
-              value={formData.termo_instrutor}
-              onChange={handleInputChange}
-              placeholder="Ex: Professor, Educador, Monitor, Treinador"
-              required
-            />
-            <p className="text-[11px] text-muted-foreground">Profissional de campo que ministra as atividades práticas.</p>
-          </div>
-
-          <div className="space-y-1">
-            <Label htmlFor="termo_grupo">Termo para Grupo / Turma *</Label>
-            <Input
-              id="termo_grupo"
-              name="termo_grupo"
-              value={formData.termo_grupo}
-              onChange={handleInputChange}
-              placeholder="Ex: Turma, Chave, Pelotão, Categoria"
-              required
-            />
-            <p className="text-[11px] text-muted-foreground">Unidade de reserva de vagas por idade/horário.</p>
-          </div>
-
-          <div className="space-y-1">
-            <Label htmlFor="termo_sessao">Termo para Sessão de Atendimento *</Label>
-            <Input
-              id="termo_sessao"
-              name="termo_sessao"
-              value={formData.termo_sessao}
-              onChange={handleInputChange}
-              placeholder="Ex: Aula, Treino, Largada, Encontro"
-              required
-            />
-            <p className="text-[11px] text-muted-foreground">Ocorrência individual prática onde ocorre chamada e fotos.</p>
-          </div>
-
-          <div className="space-y-1">
-            <Label htmlFor="termo_bloco">Termo para Grade / Bloco *</Label>
-            <Input
-              id="termo_bloco"
-              name="termo_bloco"
-              value={formData.termo_bloco}
-              onChange={handleInputChange}
-              placeholder="Ex: Horário de Aula, Bateria, Etapa"
-              required
-            />
-            <p className="text-[11px] text-muted-foreground">Faixa horária semanal ou data avulsa na agenda.</p>
-          </div>
-
-          <div className="space-y-1">
-            <Label htmlFor="termo_local">Termo para Local / Polo *</Label>
-            <Input
-              id="termo_local"
-              name="termo_local"
-              value={formData.termo_local}
-              onChange={handleInputChange}
-              placeholder="Ex: Polo, Núcleo, Arena, Circuito"
-              required
-            />
-            <p className="text-[11px] text-muted-foreground">Espaço físico onde ocorrem os atendimentos.</p>
-          </div>
-
-          <div className="space-y-1">
-            <Label htmlFor="termo_materiais_coletivos">Termo para Materiais Coletivos *</Label>
-            <Input
-              id="termo_materiais_coletivos"
-              name="termo_materiais_coletivos"
-              value={formData.termo_materiais_coletivos}
-              onChange={handleInputChange}
-              placeholder="Ex: Materiais Esportivos, Equipamentos"
-              required
-            />
-            <p className="text-[11px] text-muted-foreground">Itens de treino alocados no polo físico.</p>
-          </div>
-
-          <div className="space-y-1">
-            <Label htmlFor="termo_materiais_concedidos">Termo para Materiais Individuais *</Label>
-            <Input
-              id="termo_materiais_concedidos"
-              name="termo_materiais_concedidos"
-              value={formData.termo_materiais_concedidos}
-              onChange={handleInputChange}
-              placeholder="Ex: Uniformes, Kits Individuais, Kits de Corrida"
-              required
-            />
-            <p className="text-[11px] text-muted-foreground">Itens entregues individualmente ao participante.</p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* 3. Metadados Jurídicos e Contratuais */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Dados Jurídicos & Prestação de Contas</CardTitle>
-          <CardDescription>
-            Informações documentais exigidas nos cabeçalhos oficiais dos relatórios de auditoria e MROSC.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="termo_parceria_numero">Nº do Termo de Colaboração / Fomento</Label>
-            <Input
-              id="termo_parceria_numero"
-              name="termo_parceria_numero"
-              value={formData.termo_parceria_numero}
-              onChange={handleInputChange}
-              placeholder="Ex: Termo de Colaboração nº 042/2026"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="processo_administrativo">Nº do Processo Administrativo</Label>
-            <Input
-              id="processo_administrativo"
-              name="processo_administrativo"
-              value={formData.processo_administrativo}
-              onChange={handleInputChange}
-              placeholder="Ex: Processo nº 6019.2025/0001234-5"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="edital_chamamento">Nº do Edital de Chamamento Público</Label>
-            <Input
-              id="edital_chamamento"
-              name="edital_chamamento"
-              value={formData.edital_chamamento}
-              onChange={handleInputChange}
-              placeholder="Ex: Edital nº 008/SEME/2025"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="representante_legal_nome">Representante Legal da OSC</Label>
-            <Input
-              id="representante_legal_nome"
-              name="representante_legal_nome"
-              value={formData.representante_legal_nome}
-              onChange={handleInputChange}
-              placeholder="Nome do presidente ou procurador que assina"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="representante_legal_cargo">Cargo do Representante Legal</Label>
-            <Input
-              id="representante_legal_cargo"
-              name="representante_legal_cargo"
-              value={formData.representante_legal_cargo}
-              onChange={handleInputChange}
-              placeholder="Ex: Diretor Presidente"
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="flex items-center justify-end gap-3 pt-4">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => router.back()}
-          disabled={loading}
-        >
-          Cancelar
-        </Button>
-        <Button type="submit" disabled={loading} className="gap-2">
-          <span>{loading ? "Salvando..." : initialData?.id ? "Salvar Alterações" : "Salvar e Continuar"}</span>
-          <ArrowRight className="h-4 w-4" />
-        </Button>
+          {activeTab !== "juridico" ? (
+            <Button
+              type="button"
+              onClick={handleNextTab}
+              className="gap-2"
+            >
+              <span>Próxima Etapa</span>
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          ) : (
+            <Button type="submit" disabled={loading} className="gap-2">
+              <Check className="h-4 w-4" />
+              <span>{loading ? "Salvando..." : initialData?.id ? "Salvar Alterações" : "Concluir e Criar Projeto"}</span>
+            </Button>
+          )}
+        </div>
       </div>
     </form>
   );
