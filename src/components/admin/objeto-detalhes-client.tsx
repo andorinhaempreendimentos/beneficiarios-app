@@ -184,6 +184,7 @@ export function ObjetoDetalhesClient({
             organizacoes={organizacoes}
             concedentes={concedentes}
             modalidades={modalidades}
+            initialModalidadeIds={modalidadesVinculadas.map((v) => v.modalidade_id)}
           />
         </TabsContent>
 
