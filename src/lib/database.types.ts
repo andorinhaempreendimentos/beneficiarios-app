@@ -941,7 +941,7 @@ export type Database = {
         Row: {
           ativo: boolean
           atualizado_em: string | null
-          concedente_id: string
+          concedente_id: string | null
           criado_em: string | null
           dados_bancarios: Json | null
           data_fim: string
@@ -954,7 +954,7 @@ export type Database = {
           modalidade_principal_id: string | null
           municipio: string | null
           nome: string
-          organizacao_id: string
+          organizacao_id: string | null
           processo_administrativo: string | null
           representante_legal_cargo: string | null
           representante_legal_nome: string | null
@@ -973,7 +973,7 @@ export type Database = {
         Insert: {
           ativo?: boolean
           atualizado_em?: string | null
-          concedente_id: string
+          concedente_id?: string | null
           criado_em?: string | null
           dados_bancarios?: Json | null
           data_fim: string
@@ -986,7 +986,7 @@ export type Database = {
           modalidade_principal_id?: string | null
           municipio?: string | null
           nome: string
-          organizacao_id: string
+          organizacao_id?: string | null
           processo_administrativo?: string | null
           representante_legal_cargo?: string | null
           representante_legal_nome?: string | null
@@ -1005,7 +1005,7 @@ export type Database = {
         Update: {
           ativo?: boolean
           atualizado_em?: string | null
-          concedente_id?: string
+          concedente_id?: string | null
           criado_em?: string | null
           dados_bancarios?: Json | null
           data_fim?: string
@@ -1018,7 +1018,7 @@ export type Database = {
           modalidade_principal_id?: string | null
           municipio?: string | null
           nome?: string
-          organizacao_id?: string
+          organizacao_id?: string | null
           processo_administrativo?: string | null
           representante_legal_cargo?: string | null
           representante_legal_nome?: string | null
@@ -1644,7 +1644,7 @@ export type Database = {
           modalidade_id: string | null
           objeto_id: string
           observacoes: string | null
-          organizacao_id: string
+          organizacao_id: string | null
           status: string
         }
         Insert: {
@@ -1662,7 +1662,7 @@ export type Database = {
           modalidade_id?: string | null
           objeto_id: string
           observacoes?: string | null
-          organizacao_id: string
+          organizacao_id?: string | null
           status?: string
         }
         Update: {
@@ -1680,7 +1680,7 @@ export type Database = {
           modalidade_id?: string | null
           objeto_id?: string
           observacoes?: string | null
-          organizacao_id?: string
+          organizacao_id?: string | null
           status?: string
         }
         Relationships: [

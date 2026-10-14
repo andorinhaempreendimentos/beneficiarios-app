@@ -63,6 +63,8 @@ export async function createObjeto(input: ObjetoInput) {
     .from("objetos")
     .insert({
       ...parsed.data,
+      organizacao_id: parsed.data.organizacao_id || null,
+      concedente_id: parsed.data.concedente_id || null,
       modalidade_principal_id: parsed.data.modalidade_principal_id || null,
       uf: parsed.data.uf || null,
       municipio: parsed.data.municipio || null,
@@ -119,6 +121,8 @@ export async function updateObjeto(id: string, input: ObjetoInput) {
     .from("objetos")
     .update({
       ...parsed.data,
+      organizacao_id: parsed.data.organizacao_id || null,
+      concedente_id: parsed.data.concedente_id || null,
       modalidade_principal_id: parsed.data.modalidade_principal_id || null,
       uf: parsed.data.uf || null,
       municipio: parsed.data.municipio || null,

@@ -123,8 +123,18 @@ export const objetoSchema = z
     tipo: z.enum(["continuo", "pontual"], {
       message: "Selecione o formato do projeto (contínuo ou pontual)",
     }),
-    organizacao_id: z.string().uuid("Selecione a organização social responsável"),
-    concedente_id: z.string().uuid("Selecione o concedente público"),
+    organizacao_id: z
+      .string()
+      .uuid("Organização inválida")
+      .optional()
+      .nullable()
+      .or(z.literal("")),
+    concedente_id: z
+      .string()
+      .uuid("Concedente inválido")
+      .optional()
+      .nullable()
+      .or(z.literal("")),
     modalidade_principal_id: z
       .string()
       .uuid("Modalidade inválida")
@@ -146,7 +156,8 @@ export const objetoSchema = z
       .number()
       .min(0, "Meta mínima é 0%")
       .max(100, "Meta máxima é 100%")
-      .default(75),
+      .optional()
+      .nullable(),
     habilitar_vulnerabilidade: z.boolean().default(true),
     descricao: z.string().optional().nullable(),
     municipio: z.string().optional().nullable(),
