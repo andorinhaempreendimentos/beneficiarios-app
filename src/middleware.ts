@@ -36,7 +36,8 @@ export async function middleware(request: NextRequest) {
   const isPublicRoute =
     pathname.startsWith("/login") ||
     pathname.startsWith("/inscricao") ||
-    pathname.startsWith("/r/"); // pesquisas públicas
+    pathname.startsWith("/r/") ||
+    pathname.startsWith("/pesquisa/");
 
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
