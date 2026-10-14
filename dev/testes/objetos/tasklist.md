@@ -5,6 +5,6 @@
 - [x] **T03** — Remoção do Card de Metas da Criação de Objeto: Excluir o bloco com o campo estático `meta_frequencia_percentual` do formulário base de criação
 - [x] **T04** — Remoção do campo `modalidade_principal_id` do formulário de criação de Objeto: Limpar a seleção isolada de modalidade do `objeto-form.tsx`, deixando a gestão de modalidades para sua aba dedicada
 - [x] **T05** — Criação da tabela `objeto_modalidades` no Supabase com RLS e Server Actions de relacionamento
-- [ ] **T06** — Implementação da aba dedicada de "Atividades / Modalidades" em `/admin/objetos/[id]` com seleção do catálogo e Sheet lateral deslizante para criação inline
+- [x] **T06** — Implementação da aba dedicada de "Atividades / Modalidades" em `/admin/objetos/[id]` com seleção do catálogo e Sheet lateral deslizante para criação inline
 - [ ] **T07** — Implementação da aba dedicada de "Metas do Projeto" em `/admin/objetos/[id]` com vocabulário dinâmico
 - [ ] **T08** — Validação Final de Tipagem (`tsc`), Build, Deploy na Vercel e Homologação com o usuário

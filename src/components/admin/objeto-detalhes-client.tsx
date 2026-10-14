@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ObjetoForm } from "@/components/admin/objeto-form";
+import { ObjetoModalidadesTab } from "@/components/admin/objeto-modalidades-tab";
+import type { ModalidadeVinculada } from "@/lib/actions/objeto-modalidades";
 import {
   FileText,
   Languages,
@@ -19,6 +21,7 @@ import {
   Plus,
   HelpCircle,
   ExternalLink,
+  Activity,
 } from "lucide-react";
 import type { Database } from "@/lib/database.types";
 
@@ -42,6 +45,7 @@ interface ObjetoDetalhesClientProps {
   organizacoes: OrganizacaoRow[];
   concedentes: ConcedenteRow[];
   modalidades: ModalidadeRow[];
+  modalidadesVinculadas?: ModalidadeVinculada[];
 }
 
 export function ObjetoDetalhesClient({
@@ -49,6 +53,7 @@ export function ObjetoDetalhesClient({
   organizacoes,
   concedentes,
   modalidades,
+  modalidadesVinculadas = [],
 }: ObjetoDetalhesClientProps) {
   const [activeTab, setActiveTab] = useState("geral");
 
@@ -136,7 +141,7 @@ export function ObjetoDetalhesClient({
 
       {/* Abas de Navegação e Configuração */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 lg:w-fit">
+        <TabsList className="flex flex-wrap w-full lg:w-fit gap-1 bg-muted/60 p-1 rounded-lg">
           <TabsTrigger value="geral" className="gap-2">
             <FileText className="h-4 w-4" />
             <span>Dados Gerais</span>
@@ -144,6 +149,10 @@ export function ObjetoDetalhesClient({
           <TabsTrigger value="vocabulario" className="gap-2">
             <Languages className="h-4 w-4" />
             <span>Vocabulário Dinâmico</span>
+          </TabsTrigger>
+          <TabsTrigger value="modalidades" className="gap-2">
+            <Activity className="h-4 w-4" />
+            <span>Atividades ({modalidadesVinculadas?.length ?? 0})</span>
           </TabsTrigger>
           <TabsTrigger value="regioes" className="gap-2">
             <Compass className="h-4 w-4" />
@@ -166,6 +175,16 @@ export function ObjetoDetalhesClient({
             organizacoes={organizacoes}
             concedentes={concedentes}
             modalidades={modalidades}
+          />
+        </TabsContent>
+
+        {/* Aba Atividades & Modalidades do Projeto */}
+        <TabsContent value="modalidades">
+          <ObjetoModalidadesTab
+            objetoId={objeto.id}
+            initialVinculadas={modalidadesVinculadas}
+            catalogoModalidades={modalidades}
+            termoGrupo={objeto.termo_grupo}
           />
         </TabsContent>
 
