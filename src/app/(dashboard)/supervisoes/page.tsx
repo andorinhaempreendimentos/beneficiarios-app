@@ -46,10 +46,10 @@ export default async function SupervisoesPage({ searchParams }: SupervisoesPageP
       .single();
 
     if (obj) {
-      termoLocal = obj.termo_local || termoLocal;
-      termoInstrutor = obj.termo_instrutor || termoInstrutor;
-      termoGrupo = obj.termo_grupo || termoGrupo;
-      termoSessao = obj.termo_sessao || termoSessao;
+      termoLocal = obj.termo_local;
+      termoInstrutor = obj.termo_instrutor;
+      termoGrupo = obj.termo_grupo;
+      termoSessao = obj.termo_sessao;
     }
   }
 

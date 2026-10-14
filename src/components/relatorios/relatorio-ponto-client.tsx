@@ -55,8 +55,8 @@ export function RelatorioPontoClient({
   const [data] = useState<RelatorioRHData>(initialData);
   const { objeto, indicadores, registros, locais, funcionarios } = data;
 
-  const termoLocal = objeto?.termo_local || "Polo";
-  const termoInstrutor = objeto?.termo_instrutor || "Professor";
+  const termoLocal = objeto?.termo_local || "";
+  const termoInstrutor = objeto?.termo_instrutor || "";
 
   // Filtros
   const [filtroLocal, setFiltroLocal] = useState<string>("todos");

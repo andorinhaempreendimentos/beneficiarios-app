@@ -42,10 +42,10 @@ export default async function CoordenacaoPage({ searchParams }: CoordenacaoPageP
     if (primeiroObj) {
       objetoId = primeiroObj.id;
       objetoNome = primeiroObj.nome;
-      termoLocal = primeiroObj.termo_local || termoLocal;
-      termoInstrutor = primeiroObj.termo_instrutor || termoInstrutor;
-      termoGrupo = primeiroObj.termo_grupo || termoGrupo;
-      termoSessao = primeiroObj.termo_sessao || termoSessao;
+      termoLocal = primeiroObj.termo_local;
+      termoInstrutor = primeiroObj.termo_instrutor;
+      termoGrupo = primeiroObj.termo_grupo;
+      termoSessao = primeiroObj.termo_sessao;
     }
   } else {
     const { data: obj } = await supabase
@@ -56,10 +56,10 @@ export default async function CoordenacaoPage({ searchParams }: CoordenacaoPageP
 
     if (obj) {
       objetoNome = obj.nome;
-      termoLocal = obj.termo_local || termoLocal;
-      termoInstrutor = obj.termo_instrutor || termoInstrutor;
-      termoGrupo = obj.termo_grupo || termoGrupo;
-      termoSessao = obj.termo_sessao || termoSessao;
+      termoLocal = obj.termo_local;
+      termoInstrutor = obj.termo_instrutor;
+      termoGrupo = obj.termo_grupo;
+      termoSessao = obj.termo_sessao;
     }
   }
 

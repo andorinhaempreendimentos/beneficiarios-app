@@ -95,9 +95,9 @@ export function RelatorioPeriodicoEspelho({
   const snapshot: SnapshotCadernoNivel2 =
     (relatorio.anexos_dados as SnapshotCadernoNivel2) || {};
 
-  const termoLocal = relatorio.objeto?.termo_local || "Polo";
-  const termoInstrutor = relatorio.objeto?.termo_instrutor || "Professor";
-  const termoBeneficiario = relatorio.objeto?.termo_beneficiario || "Beneficiário";
+  const termoLocal = relatorio.objeto?.termo_local || "";
+  const termoInstrutor = relatorio.objeto?.termo_instrutor || "";
+  const termoBeneficiario = relatorio.objeto?.termo_beneficiario || "";
 
   const indicadores = snapshot.indicadores_executivos || {
     polos_acompanhados: 0,

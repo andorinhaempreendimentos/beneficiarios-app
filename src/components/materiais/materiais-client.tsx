@@ -60,12 +60,12 @@ export function MateriaisClient({ initialData, objetoId }: MateriaisClientProps)
   const [data] = useState<LogisticaMateriaisData>(initialData);
   const { objeto, indicadores, materiais, remessas, entregas, demandasTamanhos, locais, instrutores } = data;
 
-  const termoLocal = objeto?.termo_local || "Polo";
-  const termoInstrutor = objeto?.termo_instrutor || "Professor";
-  const termoGrupo = objeto?.termo_grupo || "Turma";
-  const termoBeneficiario = objeto?.termo_beneficiario || "Aluno";
-  const termoColetivo = objeto?.termo_materiais_coletivos || "Materiais Coletivos";
-  const termoIndividual = objeto?.termo_materiais_concedidos || "Uniformes";
+  const termoLocal = objeto?.termo_local || "";
+  const termoInstrutor = objeto?.termo_instrutor || "";
+  const termoGrupo = objeto?.termo_grupo || "";
+  const termoBeneficiario = objeto?.termo_beneficiario || "";
+  const termoColetivo = objeto?.termo_materiais_coletivos || "";
+  const termoIndividual = objeto?.termo_materiais_concedidos || "";
 
   const [abaAtiva, setAbaAtiva] = useState("catalogo");
   const [busca, setBusca] = useState("");

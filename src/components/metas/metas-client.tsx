@@ -427,11 +427,11 @@ export function MetasClient({ initialData, objetoId }: MetasClientProps) {
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 pt-1">
             <div className="p-2.5 rounded-lg bg-background border border-border/50">
-              <span className="text-[11px] text-muted-foreground block">{objeto?.termo_local || "Polos"} Ativos</span>
+              <span className="text-[11px] text-muted-foreground block">{objeto?.termo_local} Ativos</span>
               <span className="text-base font-bold font-mono">{estatisticas.totalLocais}</span>
             </div>
             <div className="p-2.5 rounded-lg bg-background border border-border/50">
-              <span className="text-[11px] text-muted-foreground block">{objeto?.termo_beneficiario || "Alunos"} Ativos</span>
+              <span className="text-[11px] text-muted-foreground block">{objeto?.termo_beneficiario} Ativos</span>
               <span className="text-base font-bold font-mono">{estatisticas.totalBeneficiarios}</span>
             </div>
             <div className="p-2.5 rounded-lg bg-background border border-border/50">

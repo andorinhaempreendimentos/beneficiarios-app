@@ -67,11 +67,10 @@ export function SessaoAtivaClient({ initialData }: SessaoAtivaClientProps) {
 
   const isConcluida = sessao.status === "concluida";
 
-  // Termos dinâmicos do objeto
-  const termoSessao = sessao.objeto?.termo_sessao || "Sessão";
-  const termoInstrutor = sessao.objeto?.termo_instrutor || "Professor";
-  const termoLocal = sessao.objeto?.termo_local || "Polo";
-  const termoGrupo = sessao.objeto?.termo_grupo || "Turma";
+  const termoSessao = sessao.objeto?.termo_sessao || "";
+  const termoInstrutor = sessao.objeto?.termo_instrutor || "";
+  const termoLocal = sessao.objeto?.termo_local || "";
+  const termoGrupo = sessao.objeto?.termo_grupo || "";
 
   // Estado das fotos
   const [fotos, setFotos] = useState<string[]>(

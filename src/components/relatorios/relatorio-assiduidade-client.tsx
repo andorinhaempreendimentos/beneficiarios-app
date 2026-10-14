@@ -37,10 +37,10 @@ export function RelatorioAssiduidadeClient({
   const [data] = useState<RelatorioAssiduidadeData>(initialData);
   const { objeto, indicadores, itens, locais, turmas } = data;
 
-  const termoLocal = objeto?.termo_local || "Polo";
-  const termoInstrutor = objeto?.termo_instrutor || "Professor";
-  const termoGrupo = objeto?.termo_grupo || "Turma";
-  const termoBeneficiario = objeto?.termo_beneficiario || "Aluno";
+  const termoLocal = objeto?.termo_local || "";
+  const termoInstrutor = objeto?.termo_instrutor || "";
+  const termoGrupo = objeto?.termo_grupo || "";
+  const termoBeneficiario = objeto?.termo_beneficiario || "";
   const metaObjeto = objeto?.meta_frequencia || 75;
 
   // Filtros em tela

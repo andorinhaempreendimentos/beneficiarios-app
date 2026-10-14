@@ -97,9 +97,9 @@ export function LocalDetalhesClient({
     router.replace(`?${params.toString()}`);
   }
 
-  const termoLocal = local.objeto?.termo_local || "Polo";
-  const termoInstrutor = local.objeto?.termo_instrutor || "Professor";
-  const termoGrupo = local.objeto?.termo_grupo || "Turma";
+  const termoLocal = local.objeto?.termo_local || "";
+  const termoInstrutor = local.objeto?.termo_instrutor || "";
+  const termoGrupo = local.objeto?.termo_grupo || "";
 
   const totalBlocos = local.blocos?.length ?? 0;
   const totalTurmas = local.grupos?.length ?? 0;

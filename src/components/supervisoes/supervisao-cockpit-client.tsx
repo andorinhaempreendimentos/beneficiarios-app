@@ -63,11 +63,10 @@ export function SupervisaoCockpitClient({ initialData }: SupervisaoCockpitClient
 
   const isConcluida = visita.status === "concluida";
 
-  // Termos dinâmicos do objeto
-  const termoLocal = visita.objeto?.termo_local || "Polo";
-  const termoInstrutor = visita.objeto?.termo_instrutor || "Professor";
-  const termoGrupo = visita.objeto?.termo_grupo || "Turma";
-  const termoSessao = visita.objeto?.termo_sessao || "Sessão";
+  const termoLocal = visita.objeto?.termo_local || "";
+  const termoInstrutor = visita.objeto?.termo_instrutor || "";
+  const termoGrupo = visita.objeto?.termo_grupo || "";
+  const termoSessao = visita.objeto?.termo_sessao || "";
 
   // Navegação entre etapas (1: Atividade, 2: Vistoria Setorizada, 3: Apontamentos, 4: Espelho de Revisão)
   const [etapaAtiva, setEtapaAtiva] = useState<number>(isConcluida ? 4 : 1);

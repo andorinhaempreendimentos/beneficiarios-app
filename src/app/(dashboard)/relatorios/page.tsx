@@ -39,10 +39,10 @@ export default async function RelatoriosPage({ searchParams }: RelatoriosPagePro
     if (primeiroObj) {
       objetoId = primeiroObj.id;
       objetoNome = primeiroObj.nome;
-      termoLocal = primeiroObj.termo_local || termoLocal;
-      termoInstrutor = primeiroObj.termo_instrutor || termoInstrutor;
-      termoGrupo = primeiroObj.termo_grupo || termoGrupo;
-      termoBeneficiario = primeiroObj.termo_beneficiario || termoBeneficiario;
+      termoLocal = primeiroObj.termo_local;
+      termoInstrutor = primeiroObj.termo_instrutor;
+      termoGrupo = primeiroObj.termo_grupo;
+      termoBeneficiario = primeiroObj.termo_beneficiario;
     }
   } else {
     const { data: obj } = await supabase
@@ -53,10 +53,10 @@ export default async function RelatoriosPage({ searchParams }: RelatoriosPagePro
 
     if (obj) {
       objetoNome = obj.nome;
-      termoLocal = obj.termo_local || termoLocal;
-      termoInstrutor = obj.termo_instrutor || termoInstrutor;
-      termoGrupo = obj.termo_grupo || termoGrupo;
-      termoBeneficiario = obj.termo_beneficiario || termoBeneficiario;
+      termoLocal = obj.termo_local;
+      termoInstrutor = obj.termo_instrutor;
+      termoGrupo = obj.termo_grupo;
+      termoBeneficiario = obj.termo_beneficiario;
     }
   }
 

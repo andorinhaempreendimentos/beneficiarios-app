@@ -146,9 +146,9 @@ export function GrupoDetalhesClient({ grupo }: GrupoDetalhesClientProps) {
     Math.round((matriculasAtivas.length / grupo.capacidade_maxima) * 100)
   );
 
-  const termoGrupo = grupo.objeto?.termo_grupo || "Grupo";
-  const termoBeneficiario = grupo.objeto?.termo_beneficiario || "Beneficiário";
-  const termoLocal = grupo.objeto?.termo_local || "Local";
+  const termoGrupo = grupo.objeto?.termo_grupo || "";
+  const termoBeneficiario = grupo.objeto?.termo_beneficiario || "";
+  const termoLocal = grupo.objeto?.termo_local || "";
 
   // URL pública de inscrição direta no grupo
   const host =

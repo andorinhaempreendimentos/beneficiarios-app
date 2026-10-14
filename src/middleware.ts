@@ -37,7 +37,8 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/login") ||
     pathname.startsWith("/inscricao") ||
     pathname.startsWith("/r/") ||
-    pathname.startsWith("/pesquisa/");
+    pathname.startsWith("/pesquisa/") ||
+    pathname.startsWith("/api/cron/");
 
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();

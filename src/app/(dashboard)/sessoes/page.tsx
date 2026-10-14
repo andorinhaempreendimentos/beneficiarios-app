@@ -53,10 +53,10 @@ export default async function SessoesPage({ searchParams }: SessoesPageProps) {
       .single();
 
     if (obj) {
-      termoLocal = obj.termo_local || termoLocal;
-      termoInstrutor = obj.termo_instrutor || termoInstrutor;
-      termoSessao = obj.termo_sessao || termoSessao;
-      termoGrupo = obj.termo_grupo || termoGrupo;
+      termoLocal = obj.termo_local;
+      termoInstrutor = obj.termo_instrutor;
+      termoSessao = obj.termo_sessao;
+      termoGrupo = obj.termo_grupo;
     }
   }
 
