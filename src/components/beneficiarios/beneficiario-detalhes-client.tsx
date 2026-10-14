@@ -480,7 +480,7 @@ export function BeneficiarioDetalhesClient({
 
       {/* Modal de Edição de Dados Civis */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Dados Civis do Beneficiário</DialogTitle>
             <DialogDescription>

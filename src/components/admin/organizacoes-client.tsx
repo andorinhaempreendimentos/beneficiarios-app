@@ -264,7 +264,7 @@ export function OrganizacoesClient({ initialOrganizacoes }: OrganizacoesClientPr
 
       {/* Modal de Criação / Edição */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingOrg ? "Editar Organização Social" : "Nova Organização Social"}

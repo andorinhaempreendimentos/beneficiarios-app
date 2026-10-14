@@ -466,7 +466,7 @@ export function ConstrutorPerguntas({
 
       {/* Modal Criação / Edição de Pergunta */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingId ? "Editar Pergunta" : "Nova Pergunta da Inscrição"}

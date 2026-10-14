@@ -264,7 +264,7 @@ export function ModalidadesClient({ initialModalidades }: ModalidadesClientProps
 
       {/* Modal de Criação / Edição */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingItem ? "Editar Modalidade" : "Nova Modalidade Esportiva"}
@@ -327,7 +327,7 @@ export function ModalidadesClient({ initialModalidades }: ModalidadesClientProps
 
       {/* Modal de Gerenciamento do Checklist da Modalidade */}
       <Dialog open={checklistModalOpen} onOpenChange={setChecklistModalOpen}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ListChecks className="h-5 w-5" />

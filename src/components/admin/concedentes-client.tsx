@@ -258,7 +258,7 @@ export function ConcedentesClient({ initialConcedentes }: ConcedentesClientProps
 
       {/* Modal de Criação / Edição */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingItem ? "Editar Concedente Público" : "Novo Concedente Público"}
