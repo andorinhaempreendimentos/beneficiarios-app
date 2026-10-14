@@ -125,8 +125,8 @@ export function SessoesClient({
           </div>
         </div>
 
-        {/* Seletor de Instrutor (para administradores / supervisores) */}
-        {instrutoresDisponiveis.length > 1 && (
+        {/* Seletor de Instrutor: apenas para administradores quando NÃO for instrutor logado */}
+        {!data.isInstrutorLogado && instrutoresDisponiveis.length > 1 && (
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground shrink-0">Visualizar como:</span>
             <select
@@ -141,6 +141,16 @@ export function SessoesClient({
               ))}
             </select>
           </div>
+        )}
+
+        {data.isInstrutorLogado && (
+          <Badge
+            variant="outline"
+            className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-semibold text-xs py-1 px-3 gap-1.5 self-start md:self-auto"
+          >
+            <UserCheck className="h-3.5 w-3.5 text-emerald-600" />
+            Painel Exclusivo do Instrutor
+          </Badge>
         )}
       </div>
 

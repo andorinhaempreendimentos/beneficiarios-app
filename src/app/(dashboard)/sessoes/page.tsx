@@ -64,7 +64,7 @@ export default async function SessoesPage({ searchParams }: SessoesPageProps) {
     <div className="space-y-6">
       <SessoesClient
         initialData={painelData}
-        instrutoresDisponiveis={instrutoresDisponiveis}
+        instrutoresDisponiveis={painelData.isInstrutorLogado ? [] : instrutoresDisponiveis}
         objetoId={objetoId}
         termoLocal={termoLocal}
         termoInstrutor={termoInstrutor}

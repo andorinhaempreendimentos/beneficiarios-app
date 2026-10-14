@@ -47,6 +47,7 @@ export interface BlocoHojeItem {
 }
 
 export interface PainelInstrutorData {
+  isInstrutorLogado?: boolean;
   instrutor: {
     id: string;
     nome_completo: string;
@@ -87,21 +88,66 @@ export async function getPainelInstrutorData(
 ): Promise<PainelInstrutorData> {
   const supabase = await createClient();
 
-  // 1. Identificar o funcionário instrutor
-  let funcionarioQuery = supabase
-    .from("funcionarios")
-    .select("id, nome_completo, cargo, objeto_id, objeto:objetos(id, nome)")
-    .eq("situacao", "ativo");
+  // 1. Identificar o usuário autenticado e verificar se possui papel de instrutor
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (funcionarioIdFiltro && funcionarioIdFiltro !== "todos") {
-    funcionarioQuery = funcionarioQuery.eq("id", funcionarioIdFiltro);
+  interface FuncionarioItem {
+    id: string;
+    nome_completo: string;
+    cargo: string;
+    objeto_id: string;
+    objeto?: { id: string; nome: string } | null;
   }
 
-  const { data: funcionarios } = await funcionarioQuery.limit(10);
-  const funcionarioAtivo = funcionarios && funcionarios.length > 0 ? funcionarios[0] : null;
+  let isInstrutorLogado = false;
+  let funcionarioAtivo: FuncionarioItem | null = null;
+
+  if (user) {
+    const { data: usuarioPerfil } = await supabase
+      .from("usuarios")
+      .select("papel")
+      .eq("id", user.id)
+      .single();
+
+    if (usuarioPerfil?.papel === "instrutor") {
+      // Regra Canônica §4.2: Instrutor logado vê estritamente o seu painel exclusivo
+      const { data: funcInstrutor } = await supabase
+        .from("funcionarios")
+        .select("id, nome_completo, cargo, objeto_id, objeto:objetos(id, nome)")
+        .eq("usuario_id", user.id)
+        .eq("situacao", "ativo")
+        .single();
+
+      if (funcInstrutor) {
+        funcionarioAtivo = funcInstrutor as unknown as FuncionarioItem;
+        isInstrutorLogado = true;
+      }
+    }
+  }
+
+  // Se não for um instrutor logado com vínculo próprio, permite busca/filtro (modo administrador/coordenador)
+  if (!funcionarioAtivo) {
+    let funcionarioQuery = supabase
+      .from("funcionarios")
+      .select("id, nome_completo, cargo, objeto_id, objeto:objetos(id, nome)")
+      .eq("situacao", "ativo");
+
+    if (funcionarioIdFiltro && funcionarioIdFiltro !== "todos") {
+      funcionarioQuery = funcionarioQuery.eq("id", funcionarioIdFiltro);
+    }
+
+    const { data: funcionarios } = await funcionarioQuery.limit(10);
+    const primeiro = funcionarios && funcionarios.length > 0 ? funcionarios[0] : null;
+    if (primeiro) {
+      funcionarioAtivo = primeiro as unknown as FuncionarioItem;
+    }
+  }
 
   if (!funcionarioAtivo) {
     return {
+      isInstrutorLogado: false,
       instrutor: null,
       indicadores: {
         totalSessoesMes: 0,
@@ -300,6 +346,7 @@ export async function getPainelInstrutorData(
   });
 
   return {
+    isInstrutorLogado,
     instrutor: {
       id: funcionarioAtivo.id,
       nome_completo: funcionarioAtivo.nome_completo,
