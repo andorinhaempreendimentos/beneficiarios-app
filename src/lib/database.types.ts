@@ -494,7 +494,7 @@ export type Database = {
           id: string
           nome: string
           objeto_id: string
-          regiao_id: string
+          regiao_id: string | null
           slug: string | null
         }
         Insert: {
@@ -511,7 +511,7 @@ export type Database = {
           id?: string
           nome: string
           objeto_id: string
-          regiao_id: string
+          regiao_id?: string | null
           slug?: string | null
         }
         Update: {
@@ -528,7 +528,7 @@ export type Database = {
           id?: string
           nome?: string
           objeto_id?: string
-          regiao_id?: string
+          regiao_id?: string | null
           slug?: string | null
         }
         Relationships: [

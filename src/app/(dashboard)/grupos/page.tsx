@@ -1,7 +1,7 @@
 import React from "react";
 import { getGrupos } from "@/lib/actions/grupos";
 import { getObjetosAdmin } from "@/lib/actions/objetos";
-import { getLocaisAdmin } from "@/lib/actions/locais";
+import { getLocaisAdmin, getRegioesParaSelecao } from "@/lib/actions/locais";
 import { getModalidades } from "@/lib/actions/modalidades";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { GruposClient } from "@/components/grupos/grupos-client";
@@ -12,11 +12,12 @@ export const metadata = {
 };
 
 export default async function GruposPage() {
-  const [grupos, objetos, locais, modalidades] = await Promise.all([
+  const [grupos, objetos, locais, modalidades, regioes] = await Promise.all([
     getGrupos(),
     getObjetosAdmin(),
     getLocaisAdmin(),
     getModalidades(),
+    getRegioesParaSelecao(),
   ]);
 
   return (
@@ -30,6 +31,7 @@ export default async function GruposPage() {
         objetos={objetos.map((o) => ({ id: o.id, nome: o.nome }))}
         locais={locais.map((l) => ({ id: l.id, nome: l.nome, objeto_id: l.objeto_id }))}
         modalidades={modalidades.map((m) => ({ id: m.id, nome: m.nome }))}
+        regioes={regioes.map((r) => ({ id: r.id, nome: r.nome, objeto_id: r.objeto_id }))}
       />
     </div>
   );

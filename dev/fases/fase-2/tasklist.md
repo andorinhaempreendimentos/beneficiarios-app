@@ -26,3 +26,12 @@
 - [x] **E05** — Refatorar `/admin/locais` para navegar diretamente às páginas dedicadas e remover modais obsoletos
 - [x] **E06** — Validação completa (`npx tsc --noEmit`, `npm run lint`, `npm run build` e deploy em produção na Vercel)
 
+## Refinamento Arquitetural — Desacoplamento Região/Polo & Criação Inline de Entidades
+
+- [x] **R01** — Migração no banco de dados (`locais.regiao_id DROP NOT NULL`), atualização dos tipos `Database` e schemas Zod (`regiaoSchema` com `locais_ids`, `localSchema` com `regiao_id` opcional)
+- [x] **R02** — Server actions de Locais e Regiões (`locais.ts` com `regiao_id` opcional/nulo; `regioes.ts` com sincronização bidirecional de `locais_ids`)
+- [x] **R03** — Formulário de Polo (`LocalForm`): remoção da obrigatoriedade de região, opção de alocação posterior e suporte a callbacks `onSuccess`/`onCancel` inline
+- [x] **R04** — Gestão de Polos na Região (`regioes-client.tsx` & `/admin/regioes`): checklist e atribuição de polos no modal de Região e visualização de polos vinculados na tabela
+- [x] **R05** — Criação Inline em Turmas (`grupos-client.tsx` & `/grupos`): botões de atalho `+ Novo Polo` (Sheet com `LocalForm` completo) e `+ Nova Modalidade` (Dialog completo com todos os campos) sem perda de dados digitados
+- [x] **R06** — Validação completa (`npx tsc --noEmit` código 0, `npm run build` código 0), commit e deploy em produção
+

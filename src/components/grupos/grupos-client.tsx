@@ -9,9 +9,12 @@ import {
   toggleGrupoAtivo,
   deleteGrupo,
 } from "@/lib/actions/grupos";
+import { createModalidade } from "@/lib/actions/modalidades";
+import { LocalForm } from "@/components/admin/local-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -29,6 +32,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
 import { EmptyState } from "@/components/admin/empty-state";
 import {
@@ -42,6 +52,7 @@ import {
   Trophy,
   AlertCircle,
   ExternalLink,
+  Loader2,
 } from "lucide-react";
 
 interface ObjetoSimple {
@@ -60,11 +71,18 @@ interface ModalidadeSimple {
   nome: string;
 }
 
+interface RegiaoSimple {
+  id: string;
+  nome: string;
+  objeto_id: string;
+}
+
 interface GruposClientProps {
   initialGrupos: GrupoListItem[];
   objetos: ObjetoSimple[];
   locais: LocalSimple[];
   modalidades: ModalidadeSimple[];
+  regioes?: RegiaoSimple[];
 }
 
 interface FormData {
@@ -94,20 +112,37 @@ export function GruposClient({
   objetos,
   locais,
   modalidades,
+  regioes = [],
 }: GruposClientProps) {
   const [grupos, setGrupos] = useState<GrupoListItem[]>(initialGrupos);
+  const [locaisList, setLocaisList] = useState<LocalSimple[]>(locais);
+  const [modalidadesList, setModalidadesList] = useState<ModalidadeSimple[]>(modalidades);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [filtroObjeto, setFiltroObjeto] = useState("todos");
   const [filtroLocal, setFiltroLocal] = useState("todos");
   const [filtroModalidade, setFiltroModalidade] = useState("todos");
   const [filtroAtivo, setFiltroAtivo] = useState("todos");
 
-  // Modal de Criação / Edição
+  // Modal de Criação / Edição do Grupo
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormData>(initialFormState);
   const [formError, setFormError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Criação Inline de Polo (Sheet)
+  const [novoLocalSheetOpen, setNovoLocalSheetOpen] = useState(false);
+
+  // Criação Inline de Modalidade (Dialog)
+  const [novaModalidadeModalOpen, setNovaModalidadeModalOpen] = useState(false);
+  const [novaModalidadeData, setNovaModalidadeData] = useState({
+    nome: "",
+    descricao: "",
+    ativo: true,
+  });
+  const [novaModalidadeLoading, setNovaModalidadeLoading] = useState(false);
+  const [novaModalidadeError, setNovaModalidadeError] = useState<string | null>(null);
 
   // Confirmações
   const [toggleConfirmOpen, setToggleConfirmOpen] = useState(false);
@@ -122,20 +157,44 @@ export function GruposClient({
   // Locais filtrados no form conforme o objeto selecionado
   const locaisDisponiveisForm = useMemo(() => {
     if (!formData.objeto_id) return [];
-    return locais.filter((l) => l.objeto_id === formData.objeto_id);
-  }, [formData.objeto_id, locais]);
+    return locaisList.filter((l) => l.objeto_id === formData.objeto_id);
+  }, [formData.objeto_id, locaisList]);
 
   // Locais para filtro na listagem
   const locaisParaFiltro = useMemo(() => {
-    if (filtroObjeto === "todos") return locais;
-    return locais.filter((l) => l.objeto_id === filtroObjeto);
-  }, [filtroObjeto, locais]);
+    if (filtroObjeto === "todos") return locaisList;
+    return locaisList.filter((l) => l.objeto_id === filtroObjeto);
+  }, [filtroObjeto, locaisList]);
+
+  async function handleCreateModalidadeInline(e: React.FormEvent) {
+    e.preventDefault();
+    setNovaModalidadeLoading(true);
+    setNovaModalidadeError(null);
+
+    const res = await createModalidade({
+      nome: novaModalidadeData.nome.trim(),
+      descricao: novaModalidadeData.descricao?.trim() || null,
+      ativo: novaModalidadeData.ativo,
+    });
+
+    setNovaModalidadeLoading(false);
+
+    if (res.success && res.data) {
+      const novaMod = { id: res.data.id, nome: res.data.nome };
+      setModalidadesList((prev) => [...prev, novaMod]);
+      setFormData((prev) => ({ ...prev, modalidade_id: novaMod.id }));
+      setNovaModalidadeModalOpen(false);
+      setNovaModalidadeData({ nome: "", descricao: "", ativo: true });
+    } else {
+      setNovaModalidadeError(res.error ?? "Erro ao cadastrar modalidade.");
+    }
+  }
 
   const handleOpenCreate = () => {
     setEditingId(null);
     const primeiroObjeto = objetos.length > 0 ? objetos[0].id : "";
     const primeiroLocal =
-      locais.find((l) => l.objeto_id === primeiroObjeto)?.id || "";
+      locaisList.find((l) => l.objeto_id === primeiroObjeto)?.id || "";
 
     setFormData({
       ...initialFormState,
@@ -681,10 +740,22 @@ export function GruposClient({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="local_id">
-                  Local / Polo de Atendimento{" "}
-                  <span className="text-destructive">*</span>
-                </Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="local_id">
+                    Local / Polo de Atendimento{" "}
+                    <span className="text-destructive">*</span>
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="xs"
+                    className="h-6 text-xs text-primary gap-1 px-1.5"
+                    onClick={() => setNovoLocalSheetOpen(true)}
+                  >
+                    <Plus className="h-3 w-3" />
+                    <span>Novo Polo</span>
+                  </Button>
+                </div>
                 <select
                   id="local_id"
                   required
@@ -698,7 +769,7 @@ export function GruposClient({
                   className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
                 >
                   {locaisDisponiveisForm.length === 0 ? (
-                    <option value="">Nenhum local cadastrado</option>
+                    <option value="">Nenhum polo cadastrado (clique em + Novo Polo acima)</option>
                   ) : (
                     locaisDisponiveisForm.map((loc) => (
                       <option key={loc.id} value={loc.id}>
@@ -710,7 +781,19 @@ export function GruposClient({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="modalidade_id">Modalidade Esportiva</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="modalidade_id">Modalidade Esportiva</Label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="xs"
+                    className="h-6 text-xs text-primary gap-1 px-1.5"
+                    onClick={() => setNovaModalidadeModalOpen(true)}
+                  >
+                    <Plus className="h-3 w-3" />
+                    <span>Nova Modalidade</span>
+                  </Button>
+                </div>
                 <select
                   id="modalidade_id"
                   value={formData.modalidade_id}
@@ -723,7 +806,7 @@ export function GruposClient({
                   className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
                 >
                   <option value="">Livre / Multimodal</option>
-                  {modalidades.map((mod) => (
+                  {modalidadesList.map((mod) => (
                     <option key={mod.id} value={mod.id}>
                       {mod.nome}
                     </option>
@@ -857,6 +940,134 @@ export function GruposClient({
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Drawer Lateral (Sheet) para Criação Inline de Polo Completo */}
+      <Sheet open={novoLocalSheetOpen} onOpenChange={setNovoLocalSheetOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto p-6 z-[60]">
+          <SheetHeader className="mb-4">
+            <SheetTitle>Cadastrar Novo Polo / Local</SheetTitle>
+            <SheetDescription>
+              Regra Canônica: Cadastro completo com endereço e capacidade física sem sair do fluxo da turma.
+            </SheetDescription>
+          </SheetHeader>
+          <LocalForm
+            objetos={objetos}
+            regioes={regioes}
+            fixedObjetoId={formData.objeto_id}
+            redirectOnCreate={false}
+            onCancel={() => setNovoLocalSheetOpen(false)}
+            onSuccess={(novoLocal) => {
+              setLocaisList((prev) => [
+                ...prev,
+                {
+                  id: novoLocal.id,
+                  nome: novoLocal.nome,
+                  objeto_id: novoLocal.objeto_id || formData.objeto_id,
+                },
+              ]);
+              setFormData((prev) => ({ ...prev, local_id: novoLocal.id }));
+              setNovoLocalSheetOpen(false);
+            }}
+          />
+        </SheetContent>
+      </Sheet>
+
+      {/* Modal Dialog para Criação Inline de Nova Modalidade */}
+      <Dialog
+        open={novaModalidadeModalOpen}
+        onOpenChange={setNovaModalidadeModalOpen}
+      >
+        <DialogContent className="sm:max-w-md z-[60]">
+          <form onSubmit={handleCreateModalidadeInline} className="space-y-4">
+            <DialogHeader>
+              <DialogTitle>Nova Modalidade Esportiva</DialogTitle>
+              <DialogDescription>
+                Cadastre uma nova modalidade esportiva no catálogo global sem perder os dados da turma.
+              </DialogDescription>
+            </DialogHeader>
+
+            {novaModalidadeError && (
+              <div className="flex items-center gap-2 p-3 rounded-md bg-destructive/10 text-destructive text-sm border border-destructive/20">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>{novaModalidadeError}</span>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="mod_nome">Nome da Modalidade *</Label>
+                <Input
+                  id="mod_nome"
+                  required
+                  placeholder="Ex: Natação, Atletismo, Basquete..."
+                  value={novaModalidadeData.nome}
+                  onChange={(e) =>
+                    setNovaModalidadeData((prev) => ({
+                      ...prev,
+                      nome: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="mod_desc">Descrição das Diretrizes</Label>
+                <Textarea
+                  id="mod_desc"
+                  rows={3}
+                  placeholder="Ex: Treinamento voltado para iniciação aquática e desenvolvimento motor."
+                  value={novaModalidadeData.descricao}
+                  onChange={(e) =>
+                    setNovaModalidadeData((prev) => ({
+                      ...prev,
+                      descricao: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  id="mod_ativo"
+                  checked={novaModalidadeData.ativo}
+                  onChange={(e) =>
+                    setNovaModalidadeData((prev) => ({
+                      ...prev,
+                      ativo: e.target.checked,
+                    }))
+                  }
+                  className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
+                />
+                <Label htmlFor="mod_ativo" className="text-sm font-normal cursor-pointer">
+                  Modalidade ativa para novos grupos e turmas
+                </Label>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setNovaModalidadeModalOpen(false)}
+                disabled={novaModalidadeLoading}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={novaModalidadeLoading}>
+                {novaModalidadeLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    <span>Salvando...</span>
+                  </>
+                ) : (
+                  <span>Criar Modalidade</span>
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

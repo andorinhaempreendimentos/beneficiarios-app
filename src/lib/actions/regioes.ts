@@ -94,7 +94,21 @@ export async function createRegiao(input: RegiaoInput) {
     return { success: false, error: error.message };
   }
 
+  // Sincroniza os polos vinculados a esta nova região
+  if (parsed.data.locais_ids && parsed.data.locais_ids.length > 0) {
+    const { error: locaisUpdateError } = await supabase
+      .from("locais")
+      .update({ regiao_id: data.id })
+      .in("id", parsed.data.locais_ids)
+      .eq("objeto_id", parsed.data.objeto_id);
+
+    if (locaisUpdateError) {
+      console.error("Erro ao vincular locais à nova região:", locaisUpdateError.message);
+    }
+  }
+
   revalidatePath("/admin/regioes");
+  revalidatePath("/admin/locais");
   revalidatePath(`/admin/objetos/${parsed.data.objeto_id}`);
   return { success: true, data };
 }
@@ -125,7 +139,32 @@ export async function updateRegiao(id: string, input: RegiaoInput) {
     return { success: false, error: error.message };
   }
 
+  // Sincronização dos polos desta região
+  const locaisIds = parsed.data.locais_ids || [];
+  if (locaisIds.length > 0) {
+    // 1. Desvincula os polos que pertenciam a esta região mas não constam mais na seleção
+    await supabase
+      .from("locais")
+      .update({ regiao_id: null })
+      .eq("regiao_id", id)
+      .not("id", "in", `(${locaisIds.join(",")})`);
+
+    // 2. Vincula os polos selecionados a esta região
+    await supabase
+      .from("locais")
+      .update({ regiao_id: id })
+      .in("id", locaisIds)
+      .eq("objeto_id", parsed.data.objeto_id);
+  } else {
+    // Se a lista estiver vazia, remove o vínculo de todos os polos desta região
+    await supabase
+      .from("locais")
+      .update({ regiao_id: null })
+      .eq("regiao_id", id);
+  }
+
   revalidatePath("/admin/regioes");
+  revalidatePath("/admin/locais");
   revalidatePath(`/admin/objetos/${parsed.data.objeto_id}`);
   return { success: true, data };
 }

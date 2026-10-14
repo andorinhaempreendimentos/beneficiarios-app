@@ -79,23 +79,26 @@ export async function createLocal(input: LocalInput) {
     };
   }
 
-  // Regra Canônica §3.2: Garantir que regiao_id pertence ao objeto_id
-  const { data: regiao, error: regiaoError } = await supabase
-    .from("regioes")
-    .select("id, objeto_id")
-    .eq("id", parsed.data.regiao_id)
-    .single();
+  let finalRegiaoId: string | null = null;
+  if (parsed.data.regiao_id) {
+    const { data: regiao, error: regiaoError } = await supabase
+      .from("regioes")
+      .select("id, objeto_id")
+      .eq("id", parsed.data.regiao_id)
+      .single();
 
-  if (regiaoError || !regiao) {
-    return { success: false, error: "A região informada não existe." };
-  }
+    if (regiaoError || !regiao) {
+      return { success: false, error: "A região informada não existe." };
+    }
 
-  if (regiao.objeto_id !== parsed.data.objeto_id) {
-    return {
-      success: false,
-      error:
-        "Regra Canônica §3.2: A região selecionada não pertence ao projeto selecionado.",
-    };
+    if (regiao.objeto_id !== parsed.data.objeto_id) {
+      return {
+        success: false,
+        error:
+          "Regra Canônica §3.2: A região selecionada não pertence ao projeto selecionado.",
+      };
+    }
+    finalRegiaoId = regiao.id;
   }
 
   const slug = parsed.data.slug?.trim() || generateSlug(parsed.data.nome);
@@ -105,7 +108,7 @@ export async function createLocal(input: LocalInput) {
     .insert({
       nome: parsed.data.nome,
       objeto_id: parsed.data.objeto_id,
-      regiao_id: parsed.data.regiao_id,
+      regiao_id: finalRegiaoId,
       descricao: parsed.data.descricao || null,
       endereco_logradouro: parsed.data.endereco_logradouro || null,
       endereco_numero: parsed.data.endereco_numero || null,
@@ -140,23 +143,26 @@ export async function updateLocal(id: string, input: LocalInput) {
     };
   }
 
-  // Regra Canônica §3.2: Garantir que regiao_id pertence ao objeto_id
-  const { data: regiao, error: regiaoError } = await supabase
-    .from("regioes")
-    .select("id, objeto_id")
-    .eq("id", parsed.data.regiao_id)
-    .single();
+  let finalRegiaoId: string | null = null;
+  if (parsed.data.regiao_id) {
+    const { data: regiao, error: regiaoError } = await supabase
+      .from("regioes")
+      .select("id, objeto_id")
+      .eq("id", parsed.data.regiao_id)
+      .single();
 
-  if (regiaoError || !regiao) {
-    return { success: false, error: "A região informada não existe." };
-  }
+    if (regiaoError || !regiao) {
+      return { success: false, error: "A região informada não existe." };
+    }
 
-  if (regiao.objeto_id !== parsed.data.objeto_id) {
-    return {
-      success: false,
-      error:
-        "Regra Canônica §3.2: A região selecionada não pertence ao projeto selecionado.",
-    };
+    if (regiao.objeto_id !== parsed.data.objeto_id) {
+      return {
+        success: false,
+        error:
+          "Regra Canônica §3.2: A região selecionada não pertence ao projeto selecionado.",
+      };
+    }
+    finalRegiaoId = regiao.id;
   }
 
   const slug = parsed.data.slug?.trim() || generateSlug(parsed.data.nome);
@@ -166,7 +172,7 @@ export async function updateLocal(id: string, input: LocalInput) {
     .update({
       nome: parsed.data.nome,
       objeto_id: parsed.data.objeto_id,
-      regiao_id: parsed.data.regiao_id,
+      regiao_id: finalRegiaoId,
       descricao: parsed.data.descricao || null,
       endereco_logradouro: parsed.data.endereco_logradouro || null,
       endereco_numero: parsed.data.endereco_numero || null,

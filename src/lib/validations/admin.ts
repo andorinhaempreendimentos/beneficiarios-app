@@ -203,16 +203,22 @@ export const regiaoSchema = z.object({
     .optional()
     .nullable()
     .or(z.literal("")),
+  locais_ids: z.array(z.string().uuid()).default([]),
 });
 
-export type RegiaoInput = z.infer<typeof regiaoSchema>;
+export type RegiaoInput = z.input<typeof regiaoSchema>;
+export type RegiaoOutput = z.infer<typeof regiaoSchema>;
 
 // 7. Locais / Polos de Atendimento (§3.2)
 export const localSchema = z.object({
   nome: z.string().min(2, "Nome do polo/local é obrigatório"),
   objeto_id: z.string().uuid("Projeto obrigatório"),
-  // Regra Canônica §3.2: Todo local pertence obrigatoriamente a uma região
-  regiao_id: z.string().uuid("Vínculo a uma região é obrigatório (Regra Canônica §3.2)"),
+  regiao_id: z
+    .string()
+    .uuid("Região inválida")
+    .optional()
+    .nullable()
+    .or(z.literal("")),
   descricao: z.string().optional().nullable(),
   endereco_logradouro: z.string().optional().nullable(),
   endereco_numero: z.string().optional().nullable(),
@@ -229,7 +235,8 @@ export const localSchema = z.object({
   ativo: z.boolean().default(true),
 });
 
-export type LocalInput = z.infer<typeof localSchema>;
+export type LocalInput = z.input<typeof localSchema>;
+export type LocalOutput = z.infer<typeof localSchema>;
 
 // 8. Funcionários (RH de Campo para prestação de contas governamental)
 export const funcionarioSchema = z.object({

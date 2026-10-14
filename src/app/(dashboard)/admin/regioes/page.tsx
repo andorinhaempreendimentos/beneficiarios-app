@@ -1,6 +1,7 @@
 import React from "react";
 import { getRegioes, getCoordenadores } from "@/lib/actions/regioes";
 import { getObjetosAdmin } from "@/lib/actions/objetos";
+import { getLocaisAdmin } from "@/lib/actions/locais";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { RegioesClient, type RegiaoItem } from "@/components/admin/regioes-client";
 
@@ -10,10 +11,11 @@ export const metadata = {
 };
 
 export default async function RegioesPage() {
-  const [regioes, objetos, coordenadores] = await Promise.all([
+  const [regioes, objetos, coordenadores, todosLocais] = await Promise.all([
     getRegioes(),
     getObjetosAdmin(),
     getCoordenadores(),
+    getLocaisAdmin(),
   ]);
 
   return (
@@ -26,6 +28,12 @@ export default async function RegioesPage() {
         initialRegioes={regioes as unknown as RegiaoItem[]}
         objetos={objetos.map((o) => ({ id: o.id, nome: o.nome }))}
         coordenadores={coordenadores}
+        locais={todosLocais.map((l) => ({
+          id: l.id,
+          nome: l.nome,
+          objeto_id: l.objeto_id,
+          regiao_id: l.regiao_id,
+        }))}
       />
     </div>
   );

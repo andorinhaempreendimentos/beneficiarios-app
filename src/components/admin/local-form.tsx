@@ -28,7 +28,7 @@ interface LocalFormProps {
     id: string;
     nome: string;
     objeto_id: string;
-    regiao_id: string;
+    regiao_id?: string | null;
     descricao?: string | null;
     endereco_logradouro?: string | null;
     endereco_numero?: string | null;
@@ -42,14 +42,30 @@ interface LocalFormProps {
   objetos: ObjetoOption[];
   regioes: RegiaoOption[];
   isEditing?: boolean;
+  onSuccess?: (local: { id: string; nome: string; objeto_id: string }) => void;
+  onCancel?: () => void;
+  redirectOnCreate?: boolean;
+  fixedObjetoId?: string;
 }
 
-export function LocalForm({ initialData, objetos, regioes, isEditing = false }: LocalFormProps) {
+export function LocalForm({
+  initialData,
+  objetos,
+  regioes,
+  isEditing = false,
+  onSuccess,
+  onCancel,
+  redirectOnCreate = true,
+  fixedObjetoId,
+}: LocalFormProps) {
   const router = useRouter();
 
-  const defaultObjId = initialData?.objeto_id || (objetos.length > 0 ? objetos[0].id : "");
+  const defaultObjId =
+    fixedObjetoId ||
+    initialData?.objeto_id ||
+    (objetos.length > 0 ? objetos[0].id : "");
   const defaultRegs = regioes.filter((r) => r.objeto_id === defaultObjId);
-  const defaultRegId = initialData?.regiao_id || (defaultRegs.length > 0 ? defaultRegs[0].id : "");
+  const defaultRegId = initialData?.regiao_id ?? "";
 
   const [formData, setFormData] = useState({
     nome: initialData?.nome ?? "",
@@ -77,11 +93,10 @@ export function LocalForm({ initialData, objetos, regioes, isEditing = false }: 
   }, [formData.objeto_id, regioes]);
 
   function handleObjetoChange(newObjetoId: string) {
-    const regs = regioes.filter((r) => r.objeto_id === newObjetoId);
     setFormData((prev) => ({
       ...prev,
       objeto_id: newObjetoId,
-      regiao_id: regs.length > 0 ? regs[0].id : "",
+      regiao_id: "",
     }));
   }
 
@@ -94,7 +109,7 @@ export function LocalForm({ initialData, objetos, regioes, isEditing = false }: 
     const payload = {
       nome: formData.nome.trim(),
       objeto_id: formData.objeto_id,
-      regiao_id: formData.regiao_id,
+      regiao_id: formData.regiao_id ? formData.regiao_id : null,
       descricao: formData.descricao?.trim() || null,
       endereco_logradouro: formData.endereco_logradouro?.trim() || null,
       endereco_numero: formData.endereco_numero?.trim() || null,
@@ -109,17 +124,27 @@ export function LocalForm({ initialData, objetos, regioes, isEditing = false }: 
     try {
       if (isEditing && initialData?.id) {
         const result = await updateLocal(initialData.id, payload);
-        if (result.success) {
+        if (result.success && result.data) {
           setSuccessMsg("Dados do polo atualizados com sucesso!");
-          router.refresh();
+          if (onSuccess) {
+            onSuccess(result.data);
+          } else {
+            router.refresh();
+          }
         } else {
           setErrorMsg(result.error ?? "Erro ao atualizar dados do polo.");
         }
       } else {
         const result = await createLocal(payload);
         if (result.success && result.data) {
-          // Redireciona imediatamente para a página do local já com a aba da grade aberta
-          router.push(`/admin/locais/${result.data.id}?tab=grade&created=true`);
+          if (onSuccess) {
+            onSuccess(result.data);
+          } else if (redirectOnCreate) {
+            // Redireciona imediatamente para a página do local já com a aba da grade aberta
+            router.push(`/admin/locais/${result.data.id}?tab=grade&created=true`);
+          } else {
+            router.refresh();
+          }
         } else {
           setErrorMsg(result.error ?? "Erro ao criar novo polo.");
         }
@@ -202,19 +227,16 @@ export function LocalForm({ initialData, objetos, regioes, isEditing = false }: 
 
               <div className="space-y-2">
                 <Label htmlFor="local_regiao">
-                  Região Territorial Vinculada *
+                  Região Territorial (Opcional)
                 </Label>
                 <select
                   id="local_regiao"
                   value={formData.regiao_id}
                   onChange={(e) => setFormData((prev) => ({ ...prev, regiao_id: e.target.value }))}
                   className="h-10 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  required
                 >
-                  <option value="" disabled>
-                    {availableRegioes.length === 0
-                      ? "Nenhuma região encontrada para o projeto"
-                      : "Selecione a Região Territorial"}
+                  <option value="">
+                    Nenhuma região vinculada (atribuir na tela de Regiões)
                   </option>
                   {availableRegioes.map((reg) => (
                     <option key={reg.id} value={reg.id}>
@@ -223,7 +245,7 @@ export function LocalForm({ initialData, objetos, regioes, isEditing = false }: 
                   ))}
                 </select>
                 <p className="text-xs text-muted-foreground">
-                  Obrigatório (§3.2). O coordenador responsável por esta região auditará este polo.
+                  Opcional. Você pode associar polos a regiões na gestão territorial de cada projeto.
                 </p>
               </div>
 
@@ -367,13 +389,25 @@ export function LocalForm({ initialData, objetos, regioes, isEditing = false }: 
         </CardContent>
 
         <CardFooter className="flex justify-between items-center border-t border-border pt-4">
-          <Link
-            href="/admin/locais"
-            className={buttonVariants({ variant: "outline", className: "gap-2" })}
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span>Voltar para Lista de Polos</span>
-          </Link>
+          {onCancel ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              className="gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span>Cancelar</span>
+            </Button>
+          ) : (
+            <Link
+              href="/admin/locais"
+              className={buttonVariants({ variant: "outline", className: "gap-2" })}
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span>Voltar para Lista de Polos</span>
+            </Link>
+          )}
 
           <Button type="submit" disabled={loading} className="gap-2 min-w-36">
             {loading ? (
@@ -383,6 +417,8 @@ export function LocalForm({ initialData, objetos, regioes, isEditing = false }: 
               </>
             ) : isEditing ? (
               <span>Salvar Alterações</span>
+            ) : onSuccess ? (
+              <span>Criar Polo</span>
             ) : (
               <span>Salvar e Ir para a Grade</span>
             )}

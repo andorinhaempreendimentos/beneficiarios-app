@@ -54,7 +54,7 @@ interface LocalDetalhesClientProps {
     id: string;
     nome: string;
     objeto_id: string;
-    regiao_id: string;
+    regiao_id: string | null;
     descricao?: string | null;
     endereco_logradouro?: string | null;
     endereco_numero?: string | null;
@@ -162,7 +162,7 @@ export function LocalDetalhesClient({
                 <span>•</span>
                 <span className="flex items-center gap-1">
                   <Compass className="h-3.5 w-3.5" />
-                  <span>Região: {local.regiao?.nome ?? "Região Única"}</span>
+                  <span>Região: {local.regiao?.nome ?? "Não atribuída"}</span>
                 </span>
                 {local.endereco_cidade && (
                   <>
