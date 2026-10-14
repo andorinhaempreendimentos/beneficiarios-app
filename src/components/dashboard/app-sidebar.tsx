@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
-  Building2,
   Users,
   ClipboardList,
   Calendar,
@@ -14,6 +13,17 @@ import {
   Target,
   MessageSquare,
   Settings,
+  FolderKanban,
+  MapPin,
+  Compass,
+  UserCog,
+  Shield,
+  ShieldCheck,
+  Trophy,
+  Building,
+  Landmark,
+  Clock,
+  CheckSquare,
 } from "lucide-react";
 import {
   Sidebar,
@@ -27,50 +37,78 @@ import {
 } from "@/components/ui/sidebar";
 import { useObjeto } from "@/lib/objeto";
 
-const navPrincipal = [
-  { label: "Início", href: "/", icon: LayoutDashboard },
+type TermoKey = "termo_beneficiario" | "termo_grupo" | "termo_bloco" | "termo_sessao" | "termo_local";
+
+interface NavItem {
+  label: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  termoKey?: TermoKey;
+}
+
+const navPrincipal: NavItem[] = [
+  { label: "Painel Geral", href: "/", icon: LayoutDashboard },
 ];
 
-const navGestao = [
-  { label: "Beneficiários", href: "/beneficiarios", icon: Users, termoKey: "termo_beneficiario" as const },
+const navAtendimento: NavItem[] = [
+  { label: "Beneficiários", href: "/beneficiarios", icon: Users, termoKey: "termo_beneficiario" },
   { label: "Matrículas", href: "/matriculas", icon: UserCheck },
-  { label: "Grupos", href: "/grupos", icon: ClipboardList, termoKey: "termo_grupo" as const },
-  { label: "Calendário", href: "/calendario", icon: Calendar, termoKey: "termo_bloco" as const },
-  { label: "Sessões", href: "/sessoes", icon: UserCheck, termoKey: "termo_sessao" as const },
+  { label: "Turmas / Grupos", href: "/grupos", icon: ClipboardList, termoKey: "termo_grupo" },
+  { label: "Grade Semanal", href: "/calendario", icon: Calendar, termoKey: "termo_bloco" },
+  { label: "Planejamento", href: "/planejamento", icon: Clock },
+  { label: "Sessões / Chamada", href: "/sessoes", icon: CheckSquare, termoKey: "termo_sessao" },
 ];
 
-const navRelatorios = [
-  { label: "Supervisões", href: "/supervisoes", icon: UserCheck },
-  { label: "Relatórios", href: "/relatorios", icon: BarChart3 },
-  { label: "Materiais", href: "/materiais", icon: Package },
-  { label: "Metas", href: "/metas", icon: Target },
-  { label: "Pesquisas", href: "/pesquisas", icon: MessageSquare },
+const navAuditoria: NavItem[] = [
+  { label: "Supervisões", href: "/supervisoes", icon: ShieldCheck },
+  { label: "Relatórios MROSC", href: "/relatorios", icon: BarChart3 },
+  { label: "Metas Contratuais", href: "/metas", icon: Target },
+  { label: "Logística Materiais", href: "/materiais", icon: Package },
+  { label: "Pesquisas Satisfação", href: "/pesquisas", icon: MessageSquare },
 ];
 
-const navAdmin = [
-  { label: "Núcleo Institucional", href: "/admin", icon: Building2 },
-  { label: "Configurações", href: "/admin/configuracoes", icon: Settings },
+const navEstrutura: NavItem[] = [
+  { label: "Projetos Sociais", href: "/admin/objetos", icon: FolderKanban },
+  { label: "Polos Físicos", href: "/admin/locais", icon: MapPin, termoKey: "termo_local" },
+  { label: "Regiões Territoriais", href: "/admin/regioes", icon: Compass },
+  { label: "Equipe de Campo (RH)", href: "/admin/funcionarios", icon: UserCog },
+  { label: "Usuários & Acessos", href: "/admin/usuarios", icon: Shield },
+  { label: "Modalidades", href: "/admin/modalidades", icon: Trophy },
+  { label: "Organizações (OSCs)", href: "/admin/organizacoes", icon: Building },
+  { label: "Concedentes Públicos", href: "/admin/concedentes", icon: Landmark },
+  { label: "Configurações Gerais", href: "/admin/configuracoes", icon: Settings },
 ];
 
 export function AppSidebar() {
   const pathname = usePathname();
   const { objeto, getTermo } = useObjeto();
 
-  function resolveLabel(canonicalLabel: string, termoKey?: typeof navGestao[0]["termoKey"]) {
+  function resolveLabel(canonicalLabel: string, termoKey?: TermoKey) {
     if (!termoKey || !objeto) return canonicalLabel;
     return getTermo(termoKey);
+  }
+
+  function isLinkActive(href: string) {
+    if (href === "/") return pathname === "/";
+    return pathname.startsWith(href);
   }
 
   return (
     <Sidebar>
       <SidebarContent>
-        {/* Logo / Marca */}
+        {/* Logo / Projeto Ativo */}
         <div className="px-4 py-4 border-b border-sidebar-border">
-          <span className="font-semibold text-sm text-sidebar-foreground">
-            {objeto?.nome ?? "Gestão de Projetos"}
-          </span>
+          <div className="flex flex-col">
+            <span className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
+              Projeto Ativo
+            </span>
+            <span className="font-semibold text-sm text-sidebar-foreground truncate" title={objeto?.nome ?? "Gestão de Projetos"}>
+              {objeto?.nome ?? "Gestão de Projetos"}
+            </span>
+          </div>
         </div>
 
+        {/* Visão Geral */}
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -78,9 +116,9 @@ export function AppSidebar() {
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton
                     render={<Link href={item.href} />}
-                    isActive={pathname === item.href}
+                    isActive={isLinkActive(item.href)}
                   >
-                    <item.icon />
+                    <item.icon className="h-4 w-4" />
                     <span>{item.label}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -89,17 +127,18 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
+        {/* Atendimento & Campo */}
         <SidebarGroup>
-          <SidebarGroupLabel>Gestão</SidebarGroupLabel>
+          <SidebarGroupLabel>Atendimento & Campo</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navGestao.map((item) => (
+              {navAtendimento.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton
                     render={<Link href={item.href} />}
-                    isActive={pathname.startsWith(item.href)}
+                    isActive={isLinkActive(item.href)}
                   >
-                    <item.icon />
+                    <item.icon className="h-4 w-4" />
                     <span>{resolveLabel(item.label, item.termoKey)}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -108,17 +147,18 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
+        {/* Supervisão & Auditoria */}
         <SidebarGroup>
-          <SidebarGroupLabel>Relatórios & Auditoria</SidebarGroupLabel>
+          <SidebarGroupLabel>Supervisão & Auditoria</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navRelatorios.map((item) => (
+              {navAuditoria.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton
                     render={<Link href={item.href} />}
-                    isActive={pathname.startsWith(item.href)}
+                    isActive={isLinkActive(item.href)}
                   >
-                    <item.icon />
+                    <item.icon className="h-4 w-4" />
                     <span>{item.label}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -127,18 +167,19 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
+        {/* Estrutura Institucional */}
         <SidebarGroup>
-          <SidebarGroupLabel>Administração</SidebarGroupLabel>
+          <SidebarGroupLabel>Estrutura Institucional</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navAdmin.map((item) => (
+              {navEstrutura.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton
                     render={<Link href={item.href} />}
-                    isActive={pathname.startsWith(item.href)}
+                    isActive={isLinkActive(item.href)}
                   >
-                    <item.icon />
-                    <span>{item.label}</span>
+                    <item.icon className="h-4 w-4" />
+                    <span>{resolveLabel(item.label, item.termoKey)}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}

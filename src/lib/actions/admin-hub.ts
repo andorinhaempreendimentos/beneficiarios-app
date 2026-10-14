@@ -8,6 +8,9 @@ export interface AdminHubMetrics {
   objetosPontuais: number;
   totalLocais: number;
   totalRegioes: number;
+  totalGrupos: number;
+  totalBeneficiarios: number;
+  totalMatriculas: number;
   totalFuncionarios: number;
   totalUsuarios: number;
   totalOrganizacoes: number;
@@ -32,6 +35,9 @@ export async function getAdminHubMetrics(): Promise<AdminHubMetrics> {
     { data: objetos },
     { count: locaisCount },
     { count: regioesCount },
+    { count: gruposCount },
+    { count: beneficiariosCount },
+    { count: matriculasCount },
     { count: funcionariosCount },
     { count: usuariosCount },
     { count: organizacoesCount },
@@ -53,6 +59,9 @@ export async function getAdminHubMetrics(): Promise<AdminHubMetrics> {
       .order("criado_em", { ascending: false }),
     supabase.from("locais").select("*", { count: "exact", head: true }),
     supabase.from("regioes").select("*", { count: "exact", head: true }),
+    supabase.from("grupos").select("*", { count: "exact", head: true }),
+    supabase.from("beneficiarios").select("*", { count: "exact", head: true }),
+    supabase.from("matriculas").select("*", { count: "exact", head: true }),
     supabase.from("funcionarios").select("*", { count: "exact", head: true }),
     supabase.from("usuarios").select("*", { count: "exact", head: true }),
     supabase.from("organizacoes").select("*", { count: "exact", head: true }),
@@ -70,6 +79,9 @@ export async function getAdminHubMetrics(): Promise<AdminHubMetrics> {
     objetosPontuais: pontuais,
     totalLocais: locaisCount ?? 0,
     totalRegioes: regioesCount ?? 0,
+    totalGrupos: gruposCount ?? 0,
+    totalBeneficiarios: beneficiariosCount ?? 0,
+    totalMatriculas: matriculasCount ?? 0,
     totalFuncionarios: funcionariosCount ?? 0,
     totalUsuarios: usuariosCount ?? 0,
     totalOrganizacoes: organizacoesCount ?? 0,
