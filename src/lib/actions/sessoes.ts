@@ -499,9 +499,26 @@ export async function getSessaoDetalhes(sessaoId: string) {
     cpf: string | null;
     data_nascimento: string;
     vulneravel: boolean;
+    tamanho_uniforme: string | null;
     status_presenca: "presente" | "falta" | "justificada";
     justificativa?: string | null;
+    entregas: {
+      objeto_material_id: string;
+      material_nome: string;
+      data_entrega: string;
+      tamanho_entregue: string | null;
+    }[];
   }[] = [];
+
+  // 4. Materiais individuais do objeto (§3.10)
+  const { data: materiaisRaw } = await supabase
+    .from("objeto_materiais")
+    .select("id, nome_item, quantidade_prevista, quantidade_adquirida")
+    .eq("objeto_id", sessao.objeto_id)
+    .eq("tipo", "individual")
+    .order("nome_item");
+
+  const materiaisIndividuais = materiaisRaw ?? [];
 
   if (gruposIds.length > 0) {
     const { data: matriculas } = await supabase
@@ -510,6 +527,7 @@ export async function getSessaoDetalhes(sessaoId: string) {
         id,
         grupo_id,
         vulneravel,
+        dados_adicionais,
         grupo:grupos(nome),
         beneficiario_id,
         beneficiario:beneficiarios(
@@ -523,7 +541,9 @@ export async function getSessaoDetalhes(sessaoId: string) {
       .eq("status", "ativa")
       .order("criado_em", { ascending: true });
 
-    // 4. Buscar presenças já salvas (se existirem)
+    const matriculasIds = (matriculas ?? []).map((m) => m.id);
+
+    // 5. Buscar presenças já salvas (se existirem)
     const { data: presencasSalvas } = await supabase
       .from("beneficiarios_presencas")
       .select("matricula_id, status, justificativa")
@@ -532,6 +552,42 @@ export async function getSessaoDetalhes(sessaoId: string) {
     const presencasMap = new Map(
       (presencasSalvas ?? []).map((p) => [p.matricula_id, p])
     );
+
+    // 6. Buscar entregas de kits já realizadas para essas matrículas
+    const entregasMap = new Map<
+      string,
+      {
+        objeto_material_id: string;
+        material_nome: string;
+        data_entrega: string;
+        tamanho_entregue: string | null;
+      }[]
+    >();
+
+    if (matriculasIds.length > 0) {
+      const { data: entregasRaw } = await supabase
+        .from("materiais_entregas_aluno")
+        .select(`
+          matricula_id,
+          objeto_material_id,
+          data_entrega,
+          tamanho_entregue,
+          material:objeto_materiais(nome_item)
+        `)
+        .in("matricula_id", matriculasIds);
+
+      (entregasRaw ?? []).forEach((e) => {
+        const mat = e.material as unknown as { nome_item: string } | null;
+        const list = entregasMap.get(e.matricula_id) || [];
+        list.push({
+          objeto_material_id: e.objeto_material_id,
+          material_nome: mat?.nome_item || "Material Individual",
+          data_entrega: e.data_entrega,
+          tamanho_entregue: e.tamanho_entregue,
+        });
+        entregasMap.set(e.matricula_id, list);
+      });
+    }
 
     alunos = (matriculas ?? []).map((m) => {
       const b = m.beneficiario as {
@@ -542,6 +598,8 @@ export async function getSessaoDetalhes(sessaoId: string) {
       } | null;
       const g = m.grupo as { nome: string } | null;
       const presencaExistente = presencasMap.get(m.id);
+      const dados = (m.dados_adicionais as Record<string, any>) || {};
+      const tamanho = dados.tamanho_uniforme || dados.tamanho || null;
 
       return {
         matricula_id: m.id,
@@ -552,8 +610,10 @@ export async function getSessaoDetalhes(sessaoId: string) {
         cpf: b?.cpf ?? null,
         data_nascimento: b?.data_nascimento ?? "",
         vulneravel: Boolean(m.vulneravel),
+        tamanho_uniforme: tamanho,
         status_presenca: (presencaExistente?.status as "presente" | "falta" | "justificada") ?? "presente",
         justificativa: presencaExistente?.justificativa ?? null,
+        entregas: entregasMap.get(m.id) || [],
       };
     });
   }
@@ -564,6 +624,7 @@ export async function getSessaoDetalhes(sessaoId: string) {
       sessao,
       grupos,
       alunos,
+      materiaisIndividuais,
     },
   };
 }

@@ -8,6 +8,11 @@ import {
   concluirSessao,
   uploadFotoSessao,
 } from "@/lib/actions/sessoes";
+import {
+  registrarEntregaAluno,
+  registrarEntregasTurmaLote,
+  uploadFotoMaterial,
+} from "@/lib/actions/materiais";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -43,6 +48,7 @@ import {
   UserCheck,
   AlertTriangle,
   Image as ImageIcon,
+  Shirt,
 } from "lucide-react";
 
 type SessaoDetalhes = NonNullable<Awaited<ReturnType<typeof getSessaoDetalhes>>["data"]>;
@@ -95,6 +101,17 @@ export function SessaoAtivaClient({ initialData }: SessaoAtivaClientProps) {
 
   // Cronômetro da aula em andamento
   const [tempoDecorrido, setTempoDecorrido] = useState("");
+
+  // Estados de Entrega de Kits & Uniformes (§3.10.B - Fé Pública do Professor)
+  const materiaisIndividuais = initialData.materiaisIndividuais || [];
+  const [materialSelecionadoId, setMaterialSelecionadoId] = useState<string>(
+    materiaisIndividuais[0]?.id || ""
+  );
+  const [selecionadosEntrega, setSelecionadosEntrega] = useState<string[]>([]);
+  const [comprovanteEntregaUrl, setComprovanteEntregaUrl] = useState<string | null>(null);
+  const [uploadingComprovante, setUploadingComprovante] = useState(false);
+  const [feedbackEntrega, setFeedbackEntrega] = useState<{ tipo: "sucesso" | "erro"; texto: string } | null>(null);
+  const comprovanteInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isConcluida) return;
@@ -231,6 +248,154 @@ export function SessaoAtivaClient({ initialData }: SessaoAtivaClientProps) {
   const handleRemoverFoto = (indexParaRemover: number) => {
     if (isConcluida) return;
     setFotos((prev) => prev.filter((_, idx) => idx !== indexParaRemover));
+  };
+
+  // Handlers de Entrega de Kits & Uniformes (§3.10.B - Fé Pública do Professor)
+  const handleToggleSelecionadoEntrega = (matriculaId: string) => {
+    setSelecionadosEntrega((prev) =>
+      prev.includes(matriculaId) ? prev.filter((id) => id !== matriculaId) : [...prev, matriculaId]
+    );
+  };
+
+  const handleSelecionarPresentesPendentes = () => {
+    const pendentes = alunos
+      .filter((a) => a.status_presenca === "presente")
+      .filter((a) => !a.entregas.some((e) => e.objeto_material_id === materialSelecionadoId))
+      .map((a) => a.matricula_id);
+    setSelecionadosEntrega(pendentes);
+  };
+
+  const handleUploadComprovanteEntrega = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingComprovante(true);
+    setFeedbackEntrega(null);
+    try {
+      const formData = new FormData();
+      formData.append("foto", file);
+      const res = await uploadFotoMaterial(formData);
+      if (res.success && res.url) {
+        setComprovanteEntregaUrl(res.url);
+        setFeedbackEntrega({
+          tipo: "sucesso",
+          texto: "Foto da folha física anexada com sucesso (comprovação opcional para MROSC).",
+        });
+      } else {
+        setFeedbackEntrega({
+          tipo: "erro",
+          texto: res.error || "Erro no upload do comprovante.",
+        });
+      }
+    } catch {
+      setFeedbackEntrega({ tipo: "erro", texto: "Falha de conexão no upload do comprovante." });
+    } finally {
+      setUploadingComprovante(false);
+    }
+  };
+
+  const handleEntregarKitIndividual = async (aluno: (typeof alunos)[0]) => {
+    if (!materialSelecionadoId) {
+      setFeedbackEntrega({ tipo: "erro", texto: "Selecione um item no catálogo para entrega." });
+      return;
+    }
+
+    setFeedbackEntrega(null);
+    startTransition(async () => {
+      const res = await registrarEntregaAluno({
+        objeto_material_id: materialSelecionadoId,
+        matricula_id: aluno.matricula_id,
+        instrutor_id: sessao.funcionario_id,
+        data_entrega: sessao.data,
+        tamanho_entregue: aluno.tamanho_uniforme || undefined,
+        foto_comprovante_url: comprovanteEntregaUrl || undefined,
+      });
+
+      if (res.success) {
+        const matNome =
+          materiaisIndividuais.find((m) => m.id === materialSelecionadoId)?.nome_item || "Kit";
+        setAlunos((prev) =>
+          prev.map((a) =>
+            a.matricula_id === aluno.matricula_id
+              ? {
+                  ...a,
+                  entregas: [
+                    ...a.entregas,
+                    {
+                      objeto_material_id: materialSelecionadoId,
+                      material_nome: matNome,
+                      data_entrega: sessao.data,
+                      tamanho_entregue: aluno.tamanho_uniforme || null,
+                    },
+                  ],
+                }
+              : a
+          )
+        );
+        setFeedbackEntrega({
+          tipo: "sucesso",
+          texto: `Kit entregue para ${aluno.nome_completo} com fé pública registrada!`,
+        });
+      } else {
+        setFeedbackEntrega({ tipo: "erro", texto: res.error || "Erro ao registrar entrega." });
+      }
+    });
+  };
+
+  const handleEntregarKitsLote = async () => {
+    if (!materialSelecionadoId) {
+      setFeedbackEntrega({ tipo: "erro", texto: "Selecione um item no catálogo para entrega." });
+      return;
+    }
+    if (selecionadosEntrega.length === 0) {
+      setFeedbackEntrega({ tipo: "erro", texto: "Selecione pelo menos um aluno para realizar a entrega." });
+      return;
+    }
+
+    setFeedbackEntrega(null);
+    startTransition(async () => {
+      const res = await registrarEntregasTurmaLote({
+        objeto_material_id: materialSelecionadoId,
+        grupo_id: grupos[0]?.id || (sessao.grupos_ids as string[])?.[0] || "",
+        matriculas_ids: selecionadosEntrega,
+        instrutor_id: sessao.funcionario_id,
+        data_entrega: sessao.data,
+        foto_comprovante_url: comprovanteEntregaUrl || undefined,
+      });
+
+      if (res.success) {
+        const matNome =
+          materiaisIndividuais.find((m) => m.id === materialSelecionadoId)?.nome_item || "Kit";
+        const entreguesSet = new Set(selecionadosEntrega);
+
+        setAlunos((prev) =>
+          prev.map((a) =>
+            entreguesSet.has(a.matricula_id) &&
+            !a.entregas.some((e) => e.objeto_material_id === materialSelecionadoId)
+              ? {
+                  ...a,
+                  entregas: [
+                    ...a.entregas,
+                    {
+                      objeto_material_id: materialSelecionadoId,
+                      material_nome: matNome,
+                      data_entrega: sessao.data,
+                      tamanho_entregue: a.tamanho_uniforme || null,
+                    },
+                  ],
+                }
+              : a
+          )
+        );
+        setFeedbackEntrega({
+          tipo: "sucesso",
+          texto: `${res.count ?? selecionadosEntrega.length} kit(s) entregue(s) com fé pública registrada!`,
+        });
+        setSelecionadosEntrega([]);
+      } else {
+        setFeedbackEntrega({ tipo: "erro", texto: res.error || "Erro ao registrar entregas em lote." });
+      }
+    });
   };
 
   // Concluir Sessão
@@ -603,6 +768,234 @@ export function SessaoAtivaClient({ initialData }: SessaoAtivaClientProps) {
             </div>
           )}
         </CardContent>
+      </Card>
+
+      {/* Seção: Entrega Nominal de Kits & Uniformes (§3.10.B - Fé Pública do Professor) */}
+      <Card className="border-border/60 shadow-sm overflow-hidden">
+        <div className="h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
+        <CardHeader className="pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                <Shirt className="h-5 w-5 text-indigo-600" />
+                Entrega de Kits & Uniformes (Fé Pública do {termoInstrutor})
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Confirmação nominal soberana (§3.10.B) • Alimenta o Anexo VII do MROSC. Baixa rápida em 1 toque.
+              </CardDescription>
+            </div>
+
+            <Badge
+              variant="outline"
+              className="border-indigo-500/30 bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 gap-1 text-xs self-start sm:self-auto"
+            >
+              <Sparkles className="h-3 w-3" />
+              Fé Pública Docente
+            </Badge>
+          </div>
+
+          {feedbackEntrega && (
+            <div
+              className={`p-3 rounded-lg text-xs font-medium mt-2 flex items-center justify-between ${
+                feedbackEntrega.tipo === "sucesso"
+                  ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200"
+                  : "bg-rose-50 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200"
+              }`}
+            >
+              <span>{feedbackEntrega.texto}</span>
+              <button
+                type="button"
+                onClick={() => setFeedbackEntrega(null)}
+                className="text-xs underline opacity-70 hover:opacity-100"
+              >
+                fechar
+              </button>
+            </div>
+          )}
+
+          {materiaisIndividuais.length === 0 ? (
+            <div className="p-4 rounded-lg bg-muted/40 border border-dashed border-border/80 text-xs text-muted-foreground mt-2">
+              Nenhum item individual (uniforme/kit) cadastrado no catálogo deste projeto social ainda.
+              Administradores podem cadastrar materiais individuais no menu{" "}
+              <Link href="/materiais" className="underline font-medium text-foreground">
+                Logística de Materiais
+              </Link>
+              .
+            </div>
+          ) : (
+            <div className="space-y-3 pt-2">
+              {/* Barra de Seleção de Material e Ações em Lote */}
+              <div className="flex flex-col md:flex-row gap-3 md:items-end justify-between bg-muted/20 p-3 rounded-lg border border-border/40">
+                <div className="flex-1 space-y-1">
+                  <Label className="text-xs font-medium">Item a Entregar:</Label>
+                  <select
+                    value={materialSelecionadoId}
+                    onChange={(e) => {
+                      setMaterialSelecionadoId(e.target.value);
+                      setSelecionadosEntrega([]);
+                    }}
+                    className="w-full h-9 px-3 rounded-md border border-input bg-background text-xs font-medium"
+                  >
+                    {materiaisIndividuais.map((mat) => (
+                      <option key={mat.id} value={mat.id}>
+                        {mat.nome_item} ({mat.quantidade_adquirida} adquiridos)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSelecionarPresentesPendentes}
+                    className="h-9 text-xs gap-1.5"
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5 text-blue-600" />
+                    Selecionar Presentes Pendentes
+                  </Button>
+
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleEntregarKitsLote}
+                    disabled={selecionadosEntrega.length === 0 || isPending}
+                    className="h-9 text-xs gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white"
+                  >
+                    {isPending ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-3.5 w-3.5" />
+                    )}
+                    Entregar para {selecionadosEntrega.length} Aluno(s) (Fé Pública)
+                  </Button>
+
+                  {/* Input Opcional de Foto da Folha Física */}
+                  <input
+                    ref={comprovanteInputRef}
+                    type="file"
+                    accept="image/*,application/pdf"
+                    className="hidden"
+                    onChange={handleUploadComprovanteEntrega}
+                    disabled={uploadingComprovante}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => comprovanteInputRef.current?.click()}
+                    disabled={uploadingComprovante}
+                    className="h-9 text-xs gap-1.5 border border-dashed border-border"
+                    title="Upload facultativo para comprovação em papel"
+                  >
+                    {uploadingComprovante ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Camera className="h-3.5 w-3.5 text-muted-foreground" />
+                    )}
+                    {comprovanteEntregaUrl ? "Recibo Anexado ✓" : "Foto Lista Física (Opcional)"}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Nota Explicativa Canônica */}
+              <p className="text-[11px] text-muted-foreground">
+                <span className="font-semibold text-foreground">Regra Canônica §3.10.B:</span> A baixa
+                eletrônica feita pelo professor possui fé pública soberana. O upload de lista física é
+                100% facultativo.
+              </p>
+            </div>
+          )}
+        </CardHeader>
+
+        {materiaisIndividuais.length > 0 && (
+          <CardContent className="pt-0">
+            <div className="divide-y divide-border/40">
+              {alunosFiltrados.map((aluno) => {
+                const entregaRealizada = aluno.entregas.find(
+                  (e) => e.objeto_material_id === materialSelecionadoId
+                );
+                const isJaEntregue = Boolean(entregaRealizada);
+                const isSelecionado = selecionadosEntrega.includes(aluno.matricula_id);
+
+                return (
+                  <div
+                    key={aluno.matricula_id}
+                    className={`py-2.5 px-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors rounded-lg ${
+                      isJaEntregue
+                        ? "bg-emerald-500/5 hover:bg-emerald-500/10"
+                        : isSelecionado
+                        ? "bg-indigo-500/10 hover:bg-indigo-500/15"
+                        : "hover:bg-muted/20"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      {!isJaEntregue && (
+                        <input
+                          type="checkbox"
+                          checked={isSelecionado}
+                          onChange={() => handleToggleSelecionadoEntrega(aluno.matricula_id)}
+                          className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                        />
+                      )}
+
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-sm">{aluno.nome_completo}</span>
+                          {aluno.tamanho_uniforme && (
+                            <Badge variant="secondary" className="text-[10px] font-mono py-0 h-4">
+                              Tam: {aluno.tamanho_uniforme}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
+                          {aluno.cpf && <span>CPF: {aluno.cpf}</span>}
+                          <span>•</span>
+                          <span>{aluno.grupo_nome}</span>
+                          <span>•</span>
+                          <span
+                            className={
+                              aluno.status_presenca === "presente"
+                                ? "text-emerald-600 font-medium"
+                                : "text-muted-foreground"
+                            }
+                          >
+                            Presença: {aluno.status_presenca.toUpperCase()}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 self-end sm:self-auto">
+                      {isJaEntregue ? (
+                        <Badge
+                          variant="outline"
+                          className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 gap-1.5 py-1 text-xs"
+                        >
+                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                          Kit Entregue ({new Date(entregaRealizada!.data_entrega + "T00:00:00").toLocaleDateString("pt-BR")})
+                        </Badge>
+                      ) : (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleEntregarKitIndividual(aluno)}
+                          disabled={isPending}
+                          className="h-8 text-xs font-semibold gap-1.5 border-indigo-500/30 text-indigo-700 hover:bg-indigo-50 hover:text-indigo-800 dark:text-indigo-400 dark:hover:bg-indigo-950/40"
+                        >
+                          <Sparkles className="h-3.5 w-3.5 text-indigo-600" />
+                          Entregar Kit (1 Toque)
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        )}
       </Card>
 
       {/* Seção 2: Evidências Fotográficas Probatórias (§3.5) */}

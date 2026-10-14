@@ -60,6 +60,13 @@ export default async function SessoesPage({ searchParams }: SessoesPageProps) {
     }
   }
 
+  // 4. Carregar dados de kits/uniformes para entrega rápida do professor (§3.10.B)
+  const { getDadosEntregaProfessor } = await import("@/lib/actions/materiais");
+  const dadosEntrega =
+    painelData.instrutor?.id && objetoId
+      ? await getDadosEntregaProfessor(painelData.instrutor.id, objetoId)
+      : { materiaisIndividuais: [], turmas: [] };
+
   return (
     <div className="space-y-6">
       <SessoesClient
@@ -70,6 +77,7 @@ export default async function SessoesPage({ searchParams }: SessoesPageProps) {
         termoInstrutor={termoInstrutor}
         termoSessao={termoSessao}
         termoGrupo={termoGrupo}
+        dadosEntrega={dadosEntrega}
       />
     </div>
   );
