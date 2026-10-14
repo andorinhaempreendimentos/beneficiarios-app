@@ -32,9 +32,12 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // Rotas públicas: login e autoinscrição pública
+  // Rotas públicas: login, recuperação de senha, autoinscrição pública e webhooks
   const isPublicRoute =
     pathname.startsWith("/login") ||
+    pathname.startsWith("/esqueci-senha") ||
+    pathname.startsWith("/redefinir-senha") ||
+    pathname.startsWith("/auth/callback") ||
     pathname.startsWith("/inscricao") ||
     pathname.startsWith("/r/") ||
     pathname.startsWith("/pesquisa/") ||

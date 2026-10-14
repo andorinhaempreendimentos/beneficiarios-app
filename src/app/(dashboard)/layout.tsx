@@ -43,7 +43,7 @@ export default async function DashboardLayout({
   return (
     <ObjetoProvider initialObjeto={objetoInicial}>
       <SidebarProvider>
-        <AppSidebar />
+        <AppSidebar usuario={usuario as Usuario} />
         <SidebarInset>
           <AppHeader usuario={usuario as Usuario} objetos={objetos} />
           <main className="flex-1 p-6">{children}</main>

@@ -27,10 +27,12 @@ import {
   CheckSquare,
   Search,
   X,
+  LogOut,
 } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupLabel,
   SidebarGroupContent,
@@ -39,6 +41,10 @@ import {
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
 import { useObjeto } from "@/lib/objeto";
+import { logoutAction } from "@/app/(auth)/login/actions";
+import type { Database } from "@/lib/database.types";
+
+type Usuario = Database["public"]["Tables"]["usuarios"]["Row"];
 
 type TermoKey =
   | "termo_beneficiario"
@@ -208,7 +214,7 @@ const navAuditoria: NavItem[] = [
   },
 ];
 
-export function AppSidebar() {
+export function AppSidebar({ usuario }: { usuario?: Usuario | null } = {}) {
   const pathname = usePathname();
   const { objeto, getTermo } = useObjeto();
   const [searchQuery, setSearchQuery] = useState("");
@@ -402,6 +408,32 @@ export function AppSidebar() {
           </SidebarGroup>
         )}
       </SidebarContent>
+
+      {usuario && (
+        <SidebarFooter className="border-t border-sidebar-border p-3">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex flex-col min-w-0">
+              <span className="text-xs font-semibold text-sidebar-foreground truncate" title={usuario.nome_completo ?? "Usuário"}>
+                {usuario.nome_completo ?? "Usuário"}
+              </span>
+              <span className="text-[10px] text-muted-foreground capitalize truncate">
+                {usuario.papel?.replace("_", " ")}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={async () => {
+                await logoutAction();
+              }}
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-destructive px-2 py-1 rounded-md hover:bg-destructive/10 transition-colors shrink-0"
+              title="Encerrar sessão e sair"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              <span>Sair</span>
+            </button>
+          </div>
+        </SidebarFooter>
+      )}
     </Sidebar>
   );
 }
