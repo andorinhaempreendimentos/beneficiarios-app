@@ -22,15 +22,13 @@ interface OptionItem {
 
 interface ObjetoFormProps {
   initialData?: Partial<Database["public"]["Tables"]["objetos"]["Row"]>;
-  organizacoes: OptionItem[];
-  concedentes: OptionItem[];
+  organizacoes?: OptionItem[];
+  concedentes?: OptionItem[];
   modalidades: OptionItem[];
 }
 
 export function ObjetoForm({
   initialData,
-  organizacoes,
-  concedentes,
   modalidades,
 }: ObjetoFormProps) {
   const router = useRouter();
@@ -164,44 +162,6 @@ export function ObjetoForm({
               {modalidades.map((m) => (
                 <option key={m.id} value={m.id}>
                   {m.nome}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="organizacao_id">Organização Social Responsável (OSC) *</Label>
-            <select
-              id="organizacao_id"
-              name="organizacao_id"
-              value={formData.organizacao_id}
-              onChange={handleInputChange}
-              className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-              required
-            >
-              <option value="">Selecione a OSC executora</option>
-              {organizacoes.map((org) => (
-                <option key={org.id} value={org.id}>
-                  {org.nome_fantasia || org.razao_social}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="concedente_id">Órgão Concedente (Financiador) *</Label>
-            <select
-              id="concedente_id"
-              name="concedente_id"
-              value={formData.concedente_id}
-              onChange={handleInputChange}
-              className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-              required
-            >
-              <option value="">Selecione o órgão público</option>
-              {concedentes.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.sigla ? `${c.sigla} - ${c.nome}` : c.nome}
                 </option>
               ))}
             </select>

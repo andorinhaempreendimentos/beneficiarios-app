@@ -1,6 +1,4 @@
 import React from "react";
-import { getOrganizacoes } from "@/lib/actions/organizacoes";
-import { getConcedentes } from "@/lib/actions/concedentes";
 import { getModalidades } from "@/lib/actions/modalidades";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { ObjetoForm } from "@/components/admin/objeto-form";
@@ -10,11 +8,7 @@ export const metadata = {
 };
 
 export default async function NovoObjetoPage() {
-  const [organizacoes, concedentes, modalidades] = await Promise.all([
-    getOrganizacoes(),
-    getConcedentes(),
-    getModalidades(),
-  ]);
+  const modalidades = await getModalidades();
 
   return (
     <div className="space-y-6">
@@ -24,11 +18,7 @@ export default async function NovoObjetoPage() {
         backHref="/admin/objetos"
         backLabel="Voltar para Projetos"
       />
-      <ObjetoForm
-        organizacoes={organizacoes}
-        concedentes={concedentes}
-        modalidades={modalidades}
-      />
+      <ObjetoForm modalidades={modalidades} />
     </div>
   );
 }
