@@ -16,3 +16,13 @@
 - [x] **T12** — Implementar Server Actions de Autoinscrição Pública (`src/lib/actions/autoinscricao.ts`): Inscrição anônima e RLS seguro
 - [x] **T13** — Implementar Páginas Públicas de Autoinscrição (`/inscricao/[slug]` e `/inscricao/grupo/[grupoId]`): Interface mobile com QR Code
 - [x] **T14** — Validação completa de compilação, lint e tipos (`npx tsc --noEmit` + `npm run lint` + `npm run build`), Tríplice Validação e push
+
+## Evolução — Locais em Páginas Dedicadas & Grade Semanal Interativa
+
+- [x] **E01** — Ajustar tipagem de entrada `BlocoInput` em `src/lib/validations/fase-2.ts`, implementar `getLocalById(id: string)` em `src/lib/actions/locais.ts` e revalidações em `blocos.ts`
+- [x] **E02** — Criar formulário reutilizável de Local (`src/components/admin/local-form.tsx`) e página dedicada de criação (`/admin/locais/novo`)
+- [x] **E03** — Criar componente interativo `GradeSemanalLocal` (`src/components/admin/grade-semanal-local.tsx`) com timeline 07h-21h, arraste para criação/movimentação de horários, redimensionamento por handles, detecção de choques de horário em tempo real e formulário com suporte a recorrência e turmas
+- [x] **E04** — Criar página dedicada de detalhes do Local (`/admin/locais/[id]`) com abas para Grade Interativa, Dados Cadastrais e Turmas do Polo
+- [x] **E05** — Refatorar `/admin/locais` para navegar diretamente às páginas dedicadas e remover modais obsoletos
+- [x] **E06** — Validação completa (`npx tsc --noEmit`, `npm run lint`, `npm run build` e deploy em produção na Vercel)
+
