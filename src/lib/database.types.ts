@@ -1388,6 +1388,7 @@ export type Database = {
           id: string
           motivo_retificacao: string | null
           objeto_id: string
+          regiao_id: string | null
           representante_legal_cargo: string | null
           representante_legal_id: string | null
           representante_legal_nome: string | null
@@ -1411,6 +1412,7 @@ export type Database = {
           id?: string
           motivo_retificacao?: string | null
           objeto_id: string
+          regiao_id?: string | null
           representante_legal_cargo?: string | null
           representante_legal_id?: string | null
           representante_legal_nome?: string | null
@@ -1434,6 +1436,7 @@ export type Database = {
           id?: string
           motivo_retificacao?: string | null
           objeto_id?: string
+          regiao_id?: string | null
           representante_legal_cargo?: string | null
           representante_legal_id?: string | null
           representante_legal_nome?: string | null

@@ -177,6 +177,12 @@ const navAuditoria: NavItem[] = [
     keywords: ["supervisoes", "vistorias", "fiscalizacao", "checklist", "parecer", "auditoria"],
   },
   {
+    label: "Coordenação Regional",
+    href: "/coordenacao",
+    icon: Compass,
+    keywords: ["coordenacao", "regional", "regiao", "sintese", "fechamento", "caderno", "polos", "pendencias"],
+  },
+  {
     label: "Relatórios MROSC",
     href: "/relatorios",
     icon: BarChart3,
