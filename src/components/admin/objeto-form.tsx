@@ -48,7 +48,6 @@ export function ObjetoForm({
     termo_parceria_numero: initialData?.termo_parceria_numero ?? "",
     representante_legal_nome: initialData?.representante_legal_nome ?? "",
     representante_legal_cargo: initialData?.representante_legal_cargo ?? "",
-    meta_frequencia_percentual: initialData?.meta_frequencia_percentual ?? 75,
     habilitar_vulnerabilidade: initialData?.habilitar_vulnerabilidade ?? true,
     descricao: initialData?.descricao ?? "",
     municipio: initialData?.municipio ?? "",
@@ -359,19 +358,6 @@ export function ObjetoForm({
               value={formData.edital_chamamento}
               onChange={handleInputChange}
               placeholder="Ex: Edital nº 008/SEME/2025"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="meta_frequencia_percentual">Meta de Frequência Contratual (%)</Label>
-            <Input
-              id="meta_frequencia_percentual"
-              name="meta_frequencia_percentual"
-              type="number"
-              min="0"
-              max="100"
-              value={formData.meta_frequencia_percentual}
-              onChange={handleInputChange}
             />
           </div>
 
