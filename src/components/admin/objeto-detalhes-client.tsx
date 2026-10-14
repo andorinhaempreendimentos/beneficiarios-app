@@ -185,6 +185,15 @@ export function ObjetoDetalhesClient({
             concedentes={concedentes}
             modalidades={modalidades}
             initialModalidadeIds={modalidadesVinculadas.map((v) => v.modalidade_id)}
+            initialMetas={metasData?.metas?.map((m) => ({
+              id: m.id,
+              numero_meta: m.numero_meta,
+              descricao: m.descricao,
+              tipo_apuracao: m.tipo_apuracao,
+              quantidade_prevista: m.quantidade_prevista,
+              unidade_medida: m.unidade_medida,
+              fonte_verificacao: m.fonte_verificacao,
+            }))}
           />
         </TabsContent>
 

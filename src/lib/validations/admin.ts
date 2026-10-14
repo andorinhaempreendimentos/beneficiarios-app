@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { tipoApuracaoMetaEnum } from "@/lib/validations/fase-8";
 
 /**
  * Validações para as entidades do Núcleo Institucional (Fase 1).
@@ -116,6 +117,19 @@ export type ModalidadeChecklistItemInput = z.infer<
   typeof modalidadeChecklistItemSchema
 >;
 
+// Item de Meta vinculado ao Objeto no Formulário
+export const metaItemInputSchema = z.object({
+  id: z.string().uuid().optional(),
+  numero_meta: z.coerce.number().int().min(1, "O número da meta deve ser pelo menos 1"),
+  descricao: z.string().min(1, "Descrição da meta é obrigatória"),
+  unidade_medida: z.string().min(1, "Unidade de medida é obrigatória"),
+  quantidade_prevista: z.coerce.number().positive("A quantidade prevista deve ser maior que zero"),
+  fonte_verificacao: z.string().min(1, "Fonte de verificação é obrigatória"),
+  tipo_apuracao: tipoApuracaoMetaEnum.default("manual"),
+});
+
+export type MetaItemInput = z.infer<typeof metaItemInputSchema>;
+
 // 5. Objetos / Projetos Sociais (Vínculo formal agnóstico)
 export const objetoSchema = z
   .object({
@@ -193,6 +207,9 @@ export const objetoSchema = z
       .string()
       .min(1, "Defina o termo para materiais individuais (ex: Uniformes, Kits)"),
     ativo: z.boolean().default(true),
+    // Modalidades e Metas vinculadas no formulário em abas
+    modalidades_ids: z.array(z.string().uuid()).optional().default([]),
+    metas: z.array(metaItemInputSchema).optional().default([]),
   })
   .refine(
     (data) => new Date(data.data_fim) >= new Date(data.data_inicio),

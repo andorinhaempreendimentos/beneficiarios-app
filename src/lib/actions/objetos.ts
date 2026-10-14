@@ -58,22 +58,24 @@ export async function createObjeto(input: ObjetoInput) {
     };
   }
 
+  const { modalidades_ids, metas, ...objetoFields } = parsed.data;
+
   // 1. Insere o Objeto (Projeto)
   const { data: objeto, error: objetoError } = await supabase
     .from("objetos")
     .insert({
-      ...parsed.data,
-      organizacao_id: parsed.data.organizacao_id || null,
-      concedente_id: parsed.data.concedente_id || null,
-      modalidade_principal_id: parsed.data.modalidade_principal_id || null,
-      uf: parsed.data.uf || null,
-      municipio: parsed.data.municipio || null,
-      processo_administrativo: parsed.data.processo_administrativo || null,
-      edital_chamamento: parsed.data.edital_chamamento || null,
-      termo_parceria_numero: parsed.data.termo_parceria_numero || null,
-      representante_legal_nome: parsed.data.representante_legal_nome || null,
-      representante_legal_cargo: parsed.data.representante_legal_cargo || null,
-      descricao: parsed.data.descricao || null,
+      ...objetoFields,
+      organizacao_id: objetoFields.organizacao_id || null,
+      concedente_id: objetoFields.concedente_id || null,
+      modalidade_principal_id: objetoFields.modalidade_principal_id || null,
+      uf: objetoFields.uf || null,
+      municipio: objetoFields.municipio || null,
+      processo_administrativo: objetoFields.processo_administrativo || null,
+      edital_chamamento: objetoFields.edital_chamamento || null,
+      termo_parceria_numero: objetoFields.termo_parceria_numero || null,
+      representante_legal_nome: objetoFields.representante_legal_nome || null,
+      representante_legal_cargo: objetoFields.representante_legal_cargo || null,
+      descricao: objetoFields.descricao || null,
     })
     .select()
     .single();
@@ -102,6 +104,44 @@ export async function createObjeto(input: ObjetoInput) {
     };
   }
 
+  // 3. Persistência em lote das modalidades vinculadas na Aba 3
+  if (modalidades_ids && modalidades_ids.length > 0) {
+    const modalidadesPayload = modalidades_ids.map((modalidade_id) => ({
+      objeto_id: objeto.id,
+      modalidade_id,
+      ativo: true,
+    }));
+
+    const { error: modError } = await supabase
+      .from("objeto_modalidades")
+      .insert(modalidadesPayload);
+
+    if (modError) {
+      console.error("Erro ao vincular modalidades ao objeto:", modError.message);
+    }
+  }
+
+  // 4. Persistência em lote do quadro de metas pactuadas na Aba 4 (MROSC)
+  if (metas && metas.length > 0) {
+    const metasPayload = metas.map((m) => ({
+      objeto_id: objeto.id,
+      numero_meta: m.numero_meta,
+      descricao: m.descricao,
+      tipo_apuracao: m.tipo_apuracao,
+      quantidade_prevista: m.quantidade_prevista,
+      unidade_medida: m.unidade_medida,
+      fonte_verificacao: m.fonte_verificacao,
+    }));
+
+    const { error: metasError } = await supabase
+      .from("objeto_metas")
+      .insert(metasPayload);
+
+    if (metasError) {
+      console.error("Erro ao cadastrar metas do objeto:", metasError.message);
+    }
+  }
+
   revalidatePath("/admin/objetos");
   return { success: true, data: objeto };
 }
@@ -117,27 +157,67 @@ export async function updateObjeto(id: string, input: ObjetoInput) {
     };
   }
 
+  const { modalidades_ids, metas, ...objetoFields } = parsed.data;
+
   const { error } = await supabase
     .from("objetos")
     .update({
-      ...parsed.data,
-      organizacao_id: parsed.data.organizacao_id || null,
-      concedente_id: parsed.data.concedente_id || null,
-      modalidade_principal_id: parsed.data.modalidade_principal_id || null,
-      uf: parsed.data.uf || null,
-      municipio: parsed.data.municipio || null,
-      processo_administrativo: parsed.data.processo_administrativo || null,
-      edital_chamamento: parsed.data.edital_chamamento || null,
-      termo_parceria_numero: parsed.data.termo_parceria_numero || null,
-      representante_legal_nome: parsed.data.representante_legal_nome || null,
-      representante_legal_cargo: parsed.data.representante_legal_cargo || null,
-      descricao: parsed.data.descricao || null,
+      ...objetoFields,
+      organizacao_id: objetoFields.organizacao_id || null,
+      concedente_id: objetoFields.concedente_id || null,
+      modalidade_principal_id: objetoFields.modalidade_principal_id || null,
+      uf: objetoFields.uf || null,
+      municipio: objetoFields.municipio || null,
+      processo_administrativo: objetoFields.processo_administrativo || null,
+      edital_chamamento: objetoFields.edital_chamamento || null,
+      termo_parceria_numero: objetoFields.termo_parceria_numero || null,
+      representante_legal_nome: objetoFields.representante_legal_nome || null,
+      representante_legal_cargo: objetoFields.representante_legal_cargo || null,
+      descricao: objetoFields.descricao || null,
       atualizado_em: new Date().toISOString(),
     })
     .eq("id", id);
 
   if (error) {
     return { success: false, error: error.message };
+  }
+
+  // Sincronização incremental de modalidades recém-adicionadas
+  if (modalidades_ids && modalidades_ids.length > 0) {
+    const { data: existingMods } = await supabase
+      .from("objeto_modalidades")
+      .select("modalidade_id")
+      .eq("objeto_id", id);
+
+    const existingIds = (existingMods ?? []).map((m) => m.modalidade_id);
+    const novasModalidades = modalidades_ids
+      .filter((modId) => !existingIds.includes(modId))
+      .map((modId) => ({
+        objeto_id: id,
+        modalidade_id: modId,
+        ativo: true,
+      }));
+
+    if (novasModalidades.length > 0) {
+      await supabase.from("objeto_modalidades").insert(novasModalidades);
+    }
+  }
+
+  // Sincronização incremental de metas adicionadas
+  if (metas && metas.length > 0) {
+    const novasMetas = metas.filter((m) => !m.id);
+    if (novasMetas.length > 0) {
+      const payloadNovas = novasMetas.map((m) => ({
+        objeto_id: id,
+        numero_meta: m.numero_meta,
+        descricao: m.descricao,
+        tipo_apuracao: m.tipo_apuracao,
+        quantidade_prevista: m.quantidade_prevista,
+        unidade_medida: m.unidade_medida,
+        fonte_verificacao: m.fonte_verificacao,
+      }));
+      await supabase.from("objeto_metas").insert(payloadNovas);
+    }
   }
 
   revalidatePath("/admin/objetos");
