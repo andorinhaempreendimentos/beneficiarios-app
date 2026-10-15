@@ -216,6 +216,19 @@ export function UsuariosClient({
 
   function openEditModal(item: UsuarioComDetalhes) {
     setEditingItem(item);
+    const hasFuncionario = !!item.funcionario;
+    const defaultOrgId = organizacoes.length > 0 ? organizacoes[0].id : "";
+    const defaultObjId =
+      item.acessos.length > 0
+        ? item.acessos[0].objeto_id
+        : objetos.length > 0
+        ? objetos[0].id
+        : "";
+    const availableLocs = locais.filter(
+      (l) => l.objeto_id === (item.funcionario?.objeto_id ?? defaultObjId)
+    );
+    const defaultLocId = availableLocs.length > 0 ? availableLocs[0].id : "";
+
     setFormData({
       nome_completo: item.nome_completo ?? "",
       email: item.email ?? "",
@@ -224,14 +237,14 @@ export function UsuariosClient({
       ativo: item.ativo,
       funcionario_id: item.funcionario?.id ?? "",
       objetos_ids: item.acessos.map((a) => a.objeto_id),
-      rhMode: item.funcionario ? "existente" : "nenhum",
-      novo_cpf: "",
-      novo_cargo: "",
-      novo_organizacao_id: "",
-      novo_objeto_id: "",
-      novo_local_id: "",
-      novo_telefone: "",
-      novo_carga_horaria: 40,
+      rhMode: hasFuncionario ? "novo" : "nenhum",
+      novo_cpf: item.funcionario?.cpf ? maskCpf(item.funcionario.cpf) : "",
+      novo_cargo: item.funcionario?.cargo ?? getCargoSugerido(item.papel),
+      novo_organizacao_id: item.funcionario?.organizacao_id ?? defaultOrgId,
+      novo_objeto_id: item.funcionario?.objeto_id ?? defaultObjId,
+      novo_local_id: item.funcionario?.local_id ?? defaultLocId,
+      novo_telefone: item.funcionario?.telefone ? maskPhone(item.funcionario.telefone) : "",
+      novo_carga_horaria: item.funcionario?.carga_horaria_semanal ?? 40,
     });
     setErrorMsg(null);
     setModalOpen(true);
@@ -281,8 +294,8 @@ export function UsuariosClient({
 
     const isPapelDeCampo = ["instrutor", "supervisor", "coordenador"].includes(formData.papel);
 
-    // Validações específicas para criação com novo RH
-    if (!editingItem && isPapelDeCampo && formData.rhMode === "novo") {
+    // Validações específicas para dados de RH
+    if (isPapelDeCampo && formData.rhMode === "novo") {
       const pureCpf = formData.novo_cpf.replace(/\D/g, "");
       if (pureCpf.length !== 11) {
         setErrorMsg("Por favor, preencha um CPF válido com 11 dígitos para o registro de RH.");
@@ -312,7 +325,6 @@ export function UsuariosClient({
         : formData.objetos_ids;
 
     if (
-      !editingItem &&
       isPapelDeCampo &&
       formData.rhMode === "novo" &&
       formData.novo_objeto_id &&
@@ -330,9 +342,11 @@ export function UsuariosClient({
       funcionario_id:
         formData.rhMode === "existente" && formData.funcionario_id
           ? formData.funcionario_id
+          : formData.rhMode === "novo" && formData.funcionario_id
+          ? formData.funcionario_id
           : null,
       novo_funcionario:
-        !editingItem && isPapelDeCampo && formData.rhMode === "novo"
+        isPapelDeCampo && formData.rhMode === "novo"
           ? {
               cpf: formData.novo_cpf,
               cargo: formData.novo_cargo.trim(),
@@ -716,8 +730,7 @@ export function UsuariosClient({
               )}
 
               {/* Seção de Vínculo de RH Dinâmico para Papéis de Campo (§3.2 e §4.1) */}
-              {!editingItem &&
-                ["instrutor", "supervisor", "coordenador"].includes(formData.papel) && (
+              {["instrutor", "supervisor", "coordenador"].includes(formData.papel) && (
                   <div className="rounded-lg border border-primary/30 bg-primary/5 p-3.5 space-y-3">
                     <div className="flex items-center justify-between border-b border-primary/20 pb-2">
                       <div className="flex items-center gap-2">
@@ -749,7 +762,7 @@ export function UsuariosClient({
                         }`}
                       >
                         <UserPlus className="h-3.5 w-3.5" />
-                        <span>Novo RH</span>
+                        <span>{editingItem?.funcionario ? "Dados do RH" : "Novo RH"}</span>
                       </button>
                       <button
                         type="button"
@@ -916,7 +929,9 @@ export function UsuariosClient({
                           </div>
                         </div>
                         <p className="text-[11px] text-muted-foreground pt-1">
-                          ✓ O login do usuário e a ficha de RH serão criados e vinculados simultaneamente.
+                          {editingItem?.funcionario
+                            ? "✓ Os dados do usuário e a ficha de RH vinculada serão atualizados simultaneamente."
+                            : "✓ O login do usuário e a ficha de RH serão criados e vinculados simultaneamente."}
                         </p>
                       </div>
                     )}
@@ -957,9 +972,8 @@ export function UsuariosClient({
                   </div>
                 )}
 
-              {/* Seção Simples de Vínculo em Edição ou para Papéis Administrativos */}
-              {(editingItem ||
-                !["instrutor", "supervisor", "coordenador"].includes(formData.papel)) && (
+              {/* Seção Simples de Vínculo para Papéis Administrativos */}
+              {!["instrutor", "supervisor", "coordenador"].includes(formData.papel) && (
                 <div className="space-y-1.5 pt-1 border-t border-border">
                   <Label htmlFor="funcionario_id">Vínculo com Funcionário (RH de Campo Opcional)</Label>
                   <select

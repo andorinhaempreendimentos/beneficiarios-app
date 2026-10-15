@@ -4,6 +4,18 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { usuarioSchema, type UsuarioInput } from "@/lib/validations/admin";
 
+export interface FuncionarioDoUsuario {
+  id: string;
+  nome_completo: string;
+  cargo: string;
+  cpf: string | null;
+  organizacao_id: string | null;
+  objeto_id: string | null;
+  local_id: string | null;
+  telefone: string | null;
+  carga_horaria_semanal: number | null;
+}
+
 export interface UsuarioComDetalhes {
   id: string;
   nome_completo: string | null;
@@ -12,7 +24,7 @@ export interface UsuarioComDetalhes {
   ativo: boolean;
   criado_em: string | null;
   acessos: { id: string; objeto_id: string; objeto_nome: string }[];
-  funcionario: { id: string; nome_completo: string; cargo: string } | null;
+  funcionario: FuncionarioDoUsuario | null;
 }
 
 export async function getUsuariosAdmin(objetoId?: string, papel?: string) {
@@ -51,7 +63,9 @@ export async function getUsuariosAdmin(objetoId?: string, papel?: string) {
   // 3. Buscar funcionários vinculados
   const { data: funcionarios, error: funcError } = await supabase
     .from("funcionarios")
-    .select("id, nome_completo, cargo, usuario_id");
+    .select(
+      "id, nome_completo, cargo, usuario_id, cpf, organizacao_id, objeto_id, local_id, telefone, carga_horaria_semanal"
+    );
 
   if (funcError) {
     throw new Error(`Erro ao buscar vínculos com funcionários: ${funcError.message}`);
@@ -75,10 +89,7 @@ export async function getUsuariosAdmin(objetoId?: string, papel?: string) {
   }
 
   // Mapear funcionário por usuário
-  const funcMap: Record<
-    string,
-    { id: string; nome_completo: string; cargo: string }
-  > = {};
+  const funcMap: Record<string, FuncionarioDoUsuario> = {};
 
   for (const f of funcionarios ?? []) {
     if (f.usuario_id) {
@@ -86,6 +97,12 @@ export async function getUsuariosAdmin(objetoId?: string, papel?: string) {
         id: f.id,
         nome_completo: f.nome_completo,
         cargo: f.cargo,
+        cpf: f.cpf,
+        organizacao_id: f.organizacao_id,
+        objeto_id: f.objeto_id,
+        local_id: f.local_id,
+        telefone: f.telefone,
+        carga_horaria_semanal: f.carga_horaria_semanal,
       };
     }
   }
@@ -281,18 +298,119 @@ export async function updateUsuario(id: string, input: UsuarioInput) {
     await supabase.from("usuario_acessos").insert(acessosParaInserir);
   }
 
-  // 4. Sincronizar vínculo com funcionário
-  // Desvincula outros que apontavam para este usuário
-  await supabase
-    .from("funcionarios")
-    .update({ usuario_id: null, atualizado_em: new Date().toISOString() })
-    .eq("usuario_id", id);
+  // 4. Sincronizar vínculo ou atualização de funcionário de RH (§3.2 e §4.1)
+  if (parsed.data.novo_funcionario) {
+    const cleanCpf = parsed.data.novo_funcionario.cpf.replace(/\D/g, "");
 
-  if (parsed.data.funcionario_id) {
+    // Verificar se já existe um funcionário vinculado a este usuário ou se foi informado funcionario_id
+    let existingFuncId: string | null = parsed.data.funcionario_id || null;
+
+    if (!existingFuncId) {
+      const { data: existingFunc } = await supabase
+        .from("funcionarios")
+        .select("id")
+        .eq("usuario_id", id)
+        .maybeSingle();
+
+      if (existingFunc) {
+        existingFuncId = existingFunc.id;
+      }
+    }
+
+    if (existingFuncId) {
+      // Desvincular qualquer outro registro que estivesse com este usuário para manter unicidade
+      await supabase
+        .from("funcionarios")
+        .update({ usuario_id: null, atualizado_em: new Date().toISOString() })
+        .eq("usuario_id", id)
+        .neq("id", existingFuncId);
+
+      // Atualizar o funcionário existente
+      const { error: funcError } = await supabase
+        .from("funcionarios")
+        .update({
+          nome_completo: parsed.data.nome_completo,
+          cpf: cleanCpf,
+          cargo: parsed.data.novo_funcionario.cargo,
+          organizacao_id: parsed.data.novo_funcionario.organizacao_id,
+          objeto_id: parsed.data.novo_funcionario.objeto_id,
+          local_id: parsed.data.novo_funcionario.local_id || null,
+          telefone: parsed.data.novo_funcionario.telefone || null,
+          email: parsed.data.email ? parsed.data.email.trim().toLowerCase() : undefined,
+          carga_horaria_semanal: parsed.data.novo_funcionario.carga_horaria_semanal || 40,
+          usuario_id: id,
+          atualizado_em: new Date().toISOString(),
+        })
+        .eq("id", existingFuncId);
+
+      if (funcError) {
+        return {
+          success: false,
+          error: `Falha ao atualizar dados de RH do funcionário: ${funcError.message}`,
+        };
+      }
+    } else {
+      // Desvincular registros residuais se houver
+      await supabase
+        .from("funcionarios")
+        .update({ usuario_id: null, atualizado_em: new Date().toISOString() })
+        .eq("usuario_id", id);
+
+      // Criar novo funcionário para este usuário
+      const { error: funcError } = await supabase.from("funcionarios").insert({
+        nome_completo: parsed.data.nome_completo,
+        cpf: cleanCpf,
+        cargo: parsed.data.novo_funcionario.cargo,
+        organizacao_id: parsed.data.novo_funcionario.organizacao_id,
+        objeto_id: parsed.data.novo_funcionario.objeto_id,
+        local_id: parsed.data.novo_funcionario.local_id || null,
+        telefone: parsed.data.novo_funcionario.telefone || null,
+        email: parsed.data.email ? parsed.data.email.trim().toLowerCase() : null,
+        carga_horaria_semanal: parsed.data.novo_funcionario.carga_horaria_semanal || 40,
+        data_admissao: new Date().toISOString().split("T")[0],
+        situacao: "ativo",
+        usuario_id: id,
+      });
+
+      if (funcError) {
+        return {
+          success: false,
+          error: `Falha ao criar registro de RH para o colaborador: ${funcError.message}`,
+        };
+      }
+    }
+
+    // Garantir que o projeto do funcionário esteja em usuario_acessos
+    if (parsed.data.novo_funcionario.objeto_id) {
+      const { data: jaTemAcesso } = await supabase
+        .from("usuario_acessos")
+        .select("id")
+        .eq("usuario_id", id)
+        .eq("objeto_id", parsed.data.novo_funcionario.objeto_id)
+        .maybeSingle();
+
+      if (!jaTemAcesso) {
+        await supabase.from("usuario_acessos").insert({
+          usuario_id: id,
+          objeto_id: parsed.data.novo_funcionario.objeto_id,
+          perfil: parsed.data.papel,
+        });
+      }
+    }
+  } else {
+    // Se não enviou novo_funcionario:
+    // Desvincula outros que apontavam para este usuário
     await supabase
       .from("funcionarios")
-      .update({ usuario_id: id, atualizado_em: new Date().toISOString() })
-      .eq("id", parsed.data.funcionario_id);
+      .update({ usuario_id: null, atualizado_em: new Date().toISOString() })
+      .eq("usuario_id", id);
+
+    if (parsed.data.funcionario_id) {
+      await supabase
+        .from("funcionarios")
+        .update({ usuario_id: id, atualizado_em: new Date().toISOString() })
+        .eq("id", parsed.data.funcionario_id);
+    }
   }
 
   revalidatePath("/admin/usuarios");
