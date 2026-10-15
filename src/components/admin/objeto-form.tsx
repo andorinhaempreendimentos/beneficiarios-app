@@ -10,7 +10,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import {
   Table,
   TableBody,
@@ -36,8 +41,6 @@ import {
 } from "@/components/ui/sheet";
 import {
   AlertCircle,
-  ArrowRight,
-  ArrowLeft,
   Check,
   FileText,
   Languages,
@@ -85,14 +88,6 @@ interface ObjetoFormProps {
   initialMetas?: FormMetaItem[];
 }
 
-const TABS = [
-  { id: "identificacao", label: "Identificação & Vigência", icon: FileText },
-  { id: "vocabulario", label: "Vocabulário Dinâmico", icon: Languages },
-  { id: "atividades", label: "Atividades & Modalidades", icon: Activity },
-  { id: "metas", label: "Quadro de Metas", icon: Target },
-  { id: "juridico", label: "Dados Jurídicos", icon: ShieldCheck },
-] as const;
-
 export function ObjetoForm({
   initialData,
   modalidades = [],
@@ -102,9 +97,8 @@ export function ObjetoForm({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<string>("identificacao");
 
-  // Estado das Atividades / Modalidades (Aba 3)
+  // Estado das Atividades / Modalidades (Seção 3)
   const [modalidadesCatalogo, setModalidadesCatalogo] = useState<OptionItem[]>(modalidades);
   const [selectedModalidadeIds, setSelectedModalidadeIds] = useState<string[]>(initialModalidadeIds);
   const [buscaModalidade, setBuscaModalidade] = useState("");
@@ -117,7 +111,7 @@ export function ObjetoForm({
     ativo: true,
   });
 
-  // Estado do Quadro de Metas (Aba 4)
+  // Estado do Quadro de Metas (Seção 4)
   const [metas, setMetas] = useState<FormMetaItem[]>(initialMetas);
   const [metaModalOpen, setMetaModalOpen] = useState(false);
   const [metaFormError, setMetaFormError] = useState<string | null>(null);
@@ -169,20 +163,6 @@ export function ObjetoForm({
       setFormData((prev) => ({ ...prev, [name]: checked }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
-    }
-  }
-
-  function handleNextTab() {
-    const currentIndex = TABS.findIndex((t) => t.id === activeTab);
-    if (currentIndex < TABS.length - 1) {
-      setActiveTab(TABS[currentIndex + 1].id);
-    }
-  }
-
-  function handlePrevTab() {
-    const currentIndex = TABS.findIndex((t) => t.id === activeTab);
-    if (currentIndex > 0) {
-      setActiveTab(TABS[currentIndex - 1].id);
     }
   }
 
@@ -372,30 +352,34 @@ export function ObjetoForm({
         </div>
       )}
 
-      {/* Navegação por Abas do Formulário */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="flex flex-wrap w-full gap-1 bg-muted/60 p-1 rounded-lg">
-          {TABS.map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <TabsTrigger key={tab.id} value={tab.id} className="gap-2">
-                <Icon className="h-4 w-4" />
-                <span>{tab.label}</span>
-              </TabsTrigger>
-            );
-          })}
-        </TabsList>
-
-        {/* Aba 1: Identificação & Vigência */}
-        <TabsContent value="identificacao">
-          <Card>
-            <CardHeader>
-              <CardTitle>Identificação & Formato Operacional</CardTitle>
-              <CardDescription>
-                Defina o nome do projeto e seu formato estrutural (contínuo com rotinas periódicas ou pontual para eventos).
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-4 sm:grid-cols-2">
+      {/* Seções em Accordion do Formulário de Projeto */}
+      <Accordion
+        multiple
+        defaultValue={["identificacao", "vocabulario", "atividades", "metas", "juridico"]}
+        className="space-y-4"
+      >
+        {/* Seção 1: Identificação & Vigência */}
+        <AccordionItem
+          value="identificacao"
+          className="border border-border/80 rounded-xl bg-card overflow-hidden shadow-xs"
+        >
+          <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-muted/40 transition-colors">
+            <div className="flex items-center gap-3 text-left">
+              <div className="p-2 rounded-lg bg-primary/10 text-primary shrink-0">
+                <FileText className="h-5 w-5" />
+              </div>
+              <div>
+                <div className="font-semibold text-base text-foreground">
+                  1. Identificação & Vigência
+                </div>
+                <div className="text-xs text-muted-foreground font-normal">
+                  Nome do projeto, vigência e formato operacional (contínuo ou pontual)
+                </div>
+              </div>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="px-6 pb-6 pt-1">
+            <div className="grid gap-4 sm:grid-cols-2 pt-3 border-t border-border/50">
               <div className="space-y-2 sm:col-span-2">
                 <Label htmlFor="nome">Nome do Projeto / Objeto *</Label>
                 <Input
@@ -458,20 +442,32 @@ export function ObjetoForm({
                   rows={3}
                 />
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
 
-        {/* Aba 2: Vocabulário Dinâmico (§4.3) */}
-        <TabsContent value="vocabulario">
-          <Card className="border-primary/20">
-            <CardHeader>
-              <CardTitle>Vocabulário Dinâmico do Projeto (§4.3)</CardTitle>
-              <CardDescription>
-                Personalize a linguagem da interface para este projeto. O sistema adapta os rótulos de tela de acordo com os termos escolhidos abaixo (zero hardcoded).
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-4 sm:grid-cols-2">
+        {/* Seção 2: Vocabulário Dinâmico (§4.3) */}
+        <AccordionItem
+          value="vocabulario"
+          className="border border-primary/30 rounded-xl bg-card overflow-hidden shadow-xs"
+        >
+          <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-muted/40 transition-colors">
+            <div className="flex items-center gap-3 text-left">
+              <div className="p-2 rounded-lg bg-primary/10 text-primary shrink-0">
+                <Languages className="h-5 w-5" />
+              </div>
+              <div>
+                <div className="font-semibold text-base text-foreground">
+                  2. Vocabulário Dinâmico (§4.3)
+                </div>
+                <div className="text-xs text-muted-foreground font-normal">
+                  Personalize a terminologia da interface para este projeto (zero hardcoded)
+                </div>
+              </div>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="px-6 pb-6 pt-1">
+            <div className="grid gap-4 sm:grid-cols-2 pt-3 border-t border-border/50">
               <div className="space-y-1">
                 <Label htmlFor="termo_beneficiario">Termo para os Atendidos *</Label>
                 <Input
@@ -575,36 +571,47 @@ export function ObjetoForm({
                 />
                 <p className="text-[11px] text-muted-foreground">Itens entregues individualmente ao participante.</p>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
 
-        {/* Aba 3: Atividades & Modalidades */}
-        <TabsContent value="atividades">
-          <Card>
-            <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        {/* Seção 3: Atividades & Modalidades */}
+        <AccordionItem
+          value="atividades"
+          className="border border-border/80 rounded-xl bg-card overflow-hidden shadow-xs"
+        >
+          <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-muted/40 transition-colors">
+            <div className="flex items-center gap-3 text-left">
+              <div className="p-2 rounded-lg bg-primary/10 text-primary shrink-0">
+                <Activity className="h-5 w-5" />
+              </div>
               <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="h-5 w-5 text-primary" />
-                  <span>Atividades & Modalidades do Projeto</span>
-                </CardTitle>
-                <CardDescription className="mt-1">
-                  Selecione quais práticas esportivas e atividades do catálogo geral serão executadas neste projeto.
-                  Novas {formData.termo_grupo}s só poderão ser criadas para as atividades autorizadas aqui.
-                </CardDescription>
+                <div className="font-semibold text-base text-foreground">
+                  3. Atividades & Modalidades do Projeto
+                </div>
+                <div className="text-xs text-muted-foreground font-normal">
+                  Práticas esportivas e modalidades autorizadas ({selectedModalidadeIds.length} selecionadas)
+                </div>
+              </div>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="px-6 pb-6 pt-1">
+            <div className="space-y-4 pt-3 border-t border-border/50">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <p className="text-xs text-muted-foreground">
+                  Selecione quais práticas esportivas do catálogo geral serão executadas neste projeto. Novas turmas só poderão ser criadas para as modalidades autorizadas aqui.
+                </p>
+
+                <Button
+                  type="button"
+                  onClick={() => setSheetModalidadeOpen(true)}
+                  className="gap-2 shrink-0 self-start sm:self-auto"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>+ Nova Modalidade</span>
+                </Button>
               </div>
 
-              <Button
-                type="button"
-                onClick={() => setSheetModalidadeOpen(true)}
-                className="gap-2 shrink-0"
-              >
-                <Plus className="h-4 w-4" />
-                <span>+ Nova Modalidade</span>
-              </Button>
-            </CardHeader>
-
-            <CardContent className="space-y-4">
               {/* Barra de Filtro e Contador */}
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div className="relative w-full sm:w-72">
@@ -680,36 +687,47 @@ export function ObjetoForm({
                     })}
                 </div>
               )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
 
-        {/* Aba 4: Quadro de Metas */}
-        <TabsContent value="metas">
-          <Card>
-            <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        {/* Seção 4: Quadro de Metas */}
+        <AccordionItem
+          value="metas"
+          className="border border-border/80 rounded-xl bg-card overflow-hidden shadow-xs"
+        >
+          <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-muted/40 transition-colors">
+            <div className="flex items-center gap-3 text-left">
+              <div className="p-2 rounded-lg bg-primary/10 text-primary shrink-0">
+                <Target className="h-5 w-5" />
+              </div>
               <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Target className="h-5 w-5 text-primary" />
-                  <span>Quadro de Metas do Projeto (MROSC)</span>
-                </CardTitle>
-                <CardDescription className="mt-1">
-                  Defina as metas quantitativas pactuadas para este projeto. Os cálculos se adaptam automaticamente
-                  aos termos: {tBen}s, {tSess}s e {tLoc}s definidos na Aba de Vocabulário.
-                </CardDescription>
+                <div className="font-semibold text-base text-foreground">
+                  4. Quadro de Metas do Projeto (MROSC)
+                </div>
+                <div className="text-xs text-muted-foreground font-normal">
+                  Metas pactuadas com apuração automática em tempo real ({metas.length} cadastradas)
+                </div>
+              </div>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="px-6 pb-6 pt-1">
+            <div className="space-y-4 pt-3 border-t border-border/50">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <p className="text-xs text-muted-foreground">
+                  Defina as metas quantitativas pactuadas. Os cálculos adaptam-se aos termos {tBen}s, {tSess}s e {tLoc}s definidos no Vocabulário.
+                </p>
+
+                <Button
+                  type="button"
+                  onClick={handleOpenNovaMeta}
+                  className="gap-2 shrink-0 self-start sm:self-auto"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>+ Adicionar Meta</span>
+                </Button>
               </div>
 
-              <Button
-                type="button"
-                onClick={handleOpenNovaMeta}
-                className="gap-2 shrink-0"
-              >
-                <Plus className="h-4 w-4" />
-                <span>+ Adicionar Meta</span>
-              </Button>
-            </CardHeader>
-
-            <CardContent>
               {metas.length === 0 ? (
                 <div className="p-8 text-center rounded-lg border border-dashed border-border text-muted-foreground">
                   <Target className="h-8 w-8 mx-auto mb-2 opacity-50" />
@@ -785,20 +803,32 @@ export function ObjetoForm({
                   </Table>
                 </div>
               )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
 
-        {/* Aba 5: Metadados Jurídicos e Contratuais */}
-        <TabsContent value="juridico">
-          <Card>
-            <CardHeader>
-              <CardTitle>Dados Jurídicos & Prestação de Contas</CardTitle>
-              <CardDescription>
-                Informações documentais exigidas nos cabeçalhos oficiais dos relatórios de auditoria e MROSC.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-4 sm:grid-cols-2">
+        {/* Seção 5: Metadados Jurídicos e Contratuais */}
+        <AccordionItem
+          value="juridico"
+          className="border border-border/80 rounded-xl bg-card overflow-hidden shadow-xs"
+        >
+          <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-muted/40 transition-colors">
+            <div className="flex items-center gap-3 text-left">
+              <div className="p-2 rounded-lg bg-primary/10 text-primary shrink-0">
+                <ShieldCheck className="h-5 w-5" />
+              </div>
+              <div>
+                <div className="font-semibold text-base text-foreground">
+                  5. Dados Jurídicos & Prestação de Contas
+                </div>
+                <div className="text-xs text-muted-foreground font-normal">
+                  Informações documentais exigidas nos cabeçalhos oficiais de auditoria e MROSC
+                </div>
+              </div>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="px-6 pb-6 pt-1">
+            <div className="grid gap-4 sm:grid-cols-2 pt-3 border-t border-border/50">
               <div className="space-y-2">
                 <Label htmlFor="termo_parceria_numero">Nº do Termo de Colaboração / Fomento</Label>
                 <Input
@@ -853,39 +883,23 @@ export function ObjetoForm({
                   placeholder="Ex: Diretor Presidente"
                 />
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
 
-      {/* Barra de Navegação e Submissão entre Etapas */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-border mt-6">
-        <div>
-          {activeTab !== "identificacao" && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handlePrevTab}
-              disabled={loading}
-              className="gap-2 w-full sm:w-auto"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span>Voltar</span>
-            </Button>
-          )}
-        </div>
+      {/* Barra de Ações e Submissão */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-6 border-t border-border mt-8">
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={() => router.back()}
+          disabled={loading}
+        >
+          Cancelar
+        </Button>
 
         <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => router.back()}
-            disabled={loading}
-          >
-            Cancelar
-          </Button>
-
-          {/* Salvar Rápido disponível em qualquer aba */}
           <Button
             type="submit"
             variant="secondary"
@@ -896,21 +910,19 @@ export function ObjetoForm({
             <span>Salvar Rascunho</span>
           </Button>
 
-          {activeTab !== "juridico" ? (
-            <Button
-              type="button"
-              onClick={handleNextTab}
-              className="gap-2"
-            >
-              <span>Próxima Etapa</span>
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          ) : (
-            <Button type="submit" disabled={loading} className="gap-2">
-              <Check className="h-4 w-4" />
-              <span>{loading ? "Salvando..." : initialData?.id ? "Salvar Alterações" : "Concluir e Criar Projeto"}</span>
-            </Button>
-          )}
+          <Button type="submit" disabled={loading} className="gap-2">
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Salvando...</span>
+              </>
+            ) : (
+              <>
+                <Check className="h-4 w-4" />
+                <span>{initialData?.id ? "Salvar Alterações" : "Concluir e Criar Projeto Social"}</span>
+              </>
+            )}
+          </Button>
         </div>
       </div>
       {/* Drawer Lateral (Sheet) para Criação Inline de Nova Modalidade */}
