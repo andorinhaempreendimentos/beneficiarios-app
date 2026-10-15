@@ -319,8 +319,17 @@ export function UsuariosClient({
       }
     }
 
+    // Validação de escopo de projetos para Admin Geral (§4.2)
+    if (formData.papel === "admin_geral" && formData.objetos_ids.length === 0) {
+      setErrorMsg(
+        "Por favor, selecione ao menos um projeto social autorizado para o Admin Geral."
+      );
+      setLoading(false);
+      return;
+    }
+
     let objetosIdsFinais =
-      formData.papel === "super_admin" || formData.papel === "admin_geral"
+      formData.papel === "super_admin"
         ? []
         : formData.objetos_ids;
 
@@ -425,7 +434,6 @@ export function UsuariosClient({
     const matchesObjeto =
       selectedObjetoId === "todos" ||
       u.papel === "super_admin" ||
-      u.papel === "admin_geral" ||
       u.acessos.some((a) => a.objeto_id === selectedObjetoId);
 
     return matchesSearch && matchesPapel && matchesObjeto;
@@ -542,7 +550,7 @@ export function UsuariosClient({
                       <Badge variant={papelMeta.variant}>{papelMeta.label}</Badge>
                     </TableCell>
                     <TableCell>
-                      {u.papel === "super_admin" || u.papel === "admin_geral" ? (
+                      {u.papel === "super_admin" ? (
                         <span className="text-xs text-muted-foreground flex items-center gap-1">
                           <FolderLock className="h-3.5 w-3.5" />
                           <span>Global (Todos os Projetos)</span>
@@ -704,7 +712,7 @@ export function UsuariosClient({
                 </p>
               </div>
 
-              {formData.papel !== "super_admin" && formData.papel !== "admin_geral" && (
+              {formData.papel !== "super_admin" && (
                 <div className="space-y-2 pt-1 border-t border-border">
                   <Label>Escopo de Projetos Autorizados (§4.2)</Label>
                   <p className="text-xs text-muted-foreground">
