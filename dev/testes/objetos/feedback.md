@@ -1,30 +1,24 @@
-# Feedback de Testes Manuais — Entidade: Objetos (Projetos Sociais) — Rodada 3
+# Feedback de Testes Manuais — Entidade: Objetos (Projetos Sociais) — Rodada 4
 
 **Data**: 14/10/2026  
-**Tela Auditada**: `https://beneficiarios-app.vercel.app/admin/objetos/[id]`
+**Telas Auditadas**:  
+- `https://beneficiarios-app.vercel.app/admin/objetos/novo`
+- `https://beneficiarios-app.vercel.app/admin/objetos/[id]`
 
 ---
 
 ## 1. Relato Bruto do Usuário
-- "vc removeu o cnpj desse formulário?"
-- "Então tem que refatorar essa rota aqui. https://beneficiarios-app.vercel.app/admin/objetos/a96e9c93-9733-49aa-9a08-a438565fbbc9"
+- "nessa área, e na área de novo objeto, vamos trocar as tabs por acoordions"
+- "Sim. Faz a tasklist inteira e no fim revise tudo."
 
 ---
 
 ## 2. Triagem e Classificação dos Apontamentos
 
-### 🔴 Bugs / Erros
-1. **Cards de Resumo do Topo Quebrados**:
-   - Card "Organização Social": exibe texto literal `CNPJ: ` vazio/undefined quando o projeto não possui OSC vinculada (`objeto.organizacao` é `null`);
-   - Card "Concedente Público": exibe `Esfera undefined` quando o projeto não possui órgão concedente vinculado (`objeto.concedente` é `null`);
-   - Card "Vigência": exibe `Meta: % freq.` quando `meta_frequencia_percentual` não está preenchida.
+### 🟡 Alterações Estruturais de UX / Layout
+1. **Substituição de Tabs por Accordions no `ObjetoForm` (`/admin/objetos/novo` e `/admin/objetos/[id]`)**:
+   - As 5 seções do formulário (Identificação, Vocabulário Dinâmico, Atividades & Modalidades, Quadro de Metas, Dados Jurídicos) devem ser renderizadas como itens colapsáveis/expansíveis de Accordion (`AccordionItem`).
+   - Usuário pode visualizar e expandir as seções desejadas com facilidade, sem perder visão do conjunto e sem navegação horizontal de abas.
 
-### 🟡 Alterações / Ajustes Estruturais (UX & Arquitetura)
-2. **Abas Duplicadas e Aninhadas (Tabs dentro de Tabs)**:
-   - A página de detalhes externa (`objeto-detalhes-client.tsx`) possui abas externas para *Dados Gerais*, *Vocabulário Dinâmico*, *Atividades*, *Quadro de Metas*, *Polos* e *Formulário de Inscrição*;
-   - Porém, a primeira aba (*Dados Gerais*) renderiza o `ObjetoForm`, que agora **já possui internamente suas 5 abas** (*Identificação*, *Vocabulário*, *Atividades*, *Metas* e *Jurídico*);
-   - Isso cria uma experiência de abas aninhadas confusa e dados duplicados (Vocabulário, Atividades e Metas aparecem duas vezes em níveis diferentes).
-
-3. **Reestruturação da Gestão do Projeto em `/admin/objetos/[id]`**:
-   - Manter cards de topo limpos, informativos e sem campos nulos;
-   - Unificar a navegação para que o usuário possa editar os dados do projeto via `ObjetoForm` ou navegar diretamente pelas áreas operacionais do projeto (`Polos / Locais`, `Formulário Híbrido de Inscrição`, `Visão Consolidada`).
+2. **Substituição de Tabs por Accordions na Tela de Detalhes (`/admin/objetos/[id]`)**:
+   - As 4 grandes seções da página de gestão (Configurações & Edição, Execução de Metas MROSC, Polos & Regiões, Formulário de Inscrição) devem utilizar Accordions elegantes, eliminando qualquer aninhamento de abas.
