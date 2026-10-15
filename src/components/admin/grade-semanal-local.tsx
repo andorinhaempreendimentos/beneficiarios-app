@@ -287,7 +287,7 @@ export function GradeSemanalLocal({
   function handleOpenNewManual(dia = 1, horaIni = "08:00", horaFim = "09:30") {
     setEditingBloco(null);
     setFormData({
-      nome: "Quadra 1",
+      nome: "",
       tipo_recorrencia: "semanal",
       dia_semana: dia,
       dia_mes: 1,
@@ -820,7 +820,10 @@ export function GradeSemanalLocal({
                         <div>
                           <div className="flex items-center justify-between gap-1">
                             <span className="font-bold text-xs truncate flex items-center gap-1">
-                              {bloco.nome || "Espaço"}
+                              {bloco.nome ||
+                                (bloco.turmas && bloco.turmas.length > 0
+                                  ? bloco.turmas.map((t) => t.nome).join(", ")
+                                  : "Bloco de Horário")}
                               {temConflito && (
                                 <span title={conflitos.join(" | ")} className="inline-flex shrink-0">
                                   <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
@@ -905,7 +908,7 @@ export function GradeSemanalLocal({
                 </span>
               </DialogTitle>
               <DialogDescription>
-                Configure o espaço, dia, horário, instrutor responsável e turmas atendidas no polo.
+                Configure dia, horário, instrutor responsável e turmas atendidas no polo.
               </DialogDescription>
             </DialogHeader>
 
@@ -917,15 +920,14 @@ export function GradeSemanalLocal({
             )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Espaço / Ambiente */}
+              {/* Identificação Opcional do Bloco */}
               <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="bloco_espaco">Espaço Físico / Ambiente *</Label>
+                <Label htmlFor="bloco_nome">Identificação do Bloco (Opcional)</Label>
                 <Input
-                  id="bloco_espaco"
+                  id="bloco_nome"
                   value={formData.nome}
                   onChange={(e) => setFormData((prev) => ({ ...prev, nome: e.target.value }))}
-                  placeholder="Ex: Quadra 1, Campo Society, Sala de Ginástica, Tatame A..."
-                  required
+                  placeholder="Ex: 1º Bloco, Manhã, Sala A (opcional)"
                 />
               </div>
 

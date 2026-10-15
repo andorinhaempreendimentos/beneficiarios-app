@@ -6,4 +6,4 @@
 - [x] **T04** — **Integração de Máscaras e Endereço em Organizações Sociais (OSC)**: Atualizar `src/components/admin/organizacoes-client.tsx` com máscaras de CNPJ, telefone, CEP com autocomplete e seletor de UF.
 - [x] **T05** — **Integração em Configurações do Sistema e Concedentes**: Atualizar `src/components/admin/configuracoes-form.tsx` e `src/components/admin/concedentes-client.tsx` com máscaras de CNPJ, telefone, CEP autocomplete e seletor de UF.
 - [x] **T06** — **Integração de Máscaras em Funcionários, Beneficiários e Autoinscrição**: Atualizar `funcionarios-client.tsx`, `beneficiarios-client.tsx` e `formulario-inscricao-publica.tsx` com máscaras padronizadas de CPF e telefone.
-- [ ] **T07** — **Validação Global, Build, Deploy e Homologação**: Rodar `tsc`, `npm run build`, push para o GitHub e deploy na Vercel com verificação em produção.
+- [x] **T07** — **Validação Global, Build, Deploy e Homologação**: Rodar `tsc`, `npm run build`, push para o GitHub e deploy na Vercel com verificação em produção.
