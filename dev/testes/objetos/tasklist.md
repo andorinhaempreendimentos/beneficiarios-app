@@ -1,7 +1,5 @@
-# Tasklist — Testes Manuais: Entidade Objetos (Projetos Sociais) — Rodada 2: Formulário em Abas
+# Tasklist — Testes Manuais: Entidade Objetos — Rodada 3: Refatoração da Tela de Detalhes (`/admin/objetos/[id]`)
 
-- [x] **T01** — Reestruturar `ObjetoForm` com componente de Abas (`Tabs`) para Identificação, Vocabulário Dinâmico, Atividades, Metas e Dados Jurídicos, com navegação fluida entre elas
-- [x] **T02** — Integrar a seleção de Atividades/Modalidades com Sheet lateral inline dentro da Aba 3 do `ObjetoForm`
-- [x] **T03** — Integrar a criação do Quadro de Metas dentro da Aba 4 do `ObjetoForm`, consumindo reativamente o vocabulário preenchido na Aba 2
-- [x] **T04** — Atualizar Server Action `createObjeto` para persistir o Objeto, as modalidades vinculadas e as metas em lote no Supabase
-- [x] **T05** — Validação Final de Tipagem (`tsc`), Build, Deploy na Vercel e Homologação com o usuário
+- [x] **T01** — **Saneamento dos Cards de Resumo do Topo**: Ajustar os 4 cards superiores para exibir métricas operacionais reais do projeto (Formato, Vigência com badge de status, Rede de Polos/Regiões, e Parceria/Representante Legal sem textos quebrados).
+- [ ] **T02** — **Reorganização das Abas da Tela de Detalhes**: Eliminar a duplicidade de abas aninhadas, organizando as seções em: Edição Completa (`ObjetoForm`), Polos de Atendimento, Formulário de Inscrição e Resumo Executivo para Auditoria.
+- [ ] **T03** — **Validação de Tipagem, Build, Deploy e Homologação**: Validar compilação (`tsc`), build de produção Turbopack, deploy na Vercel e homologação com o usuário.

@@ -1,35 +1,30 @@
-# Feedback de Testes Manuais — Entidade: Objetos (Projetos Sociais)
+# Feedback de Testes Manuais — Entidade: Objetos (Projetos Sociais) — Rodada 3
 
 **Data**: 14/10/2026  
-**Tela Auditada**: `https://beneficiarios-app.vercel.app/admin/objetos/novo` (e gestão em `/admin/objetos/[id]`)
+**Tela Auditada**: `https://beneficiarios-app.vercel.app/admin/objetos/[id]`
 
 ---
 
-## 1. Remoção de OSC e Concedente da Criação do Objeto
-- **Classificação**: 🟡 **Alteração de Domínio & Simplificação de Formulário**
-- **Diagnóstico Correto**: Nem a Organização Social (OSC) nem o Concedente devem fazer parte do formulário de criação do Objeto. O Objeto é a especificação do projeto em si. O vínculo de quem executa é definido dentro da OSC, e o vínculo de quem financia é definido dentro do Concedente.
-- **Ação Técnica**:
-  - Remover os campos `organizacao_id` e `concedente_id` do `ObjetoForm`, da validação do schema e da interface de criação do projeto;
-  - Garantir que a tabela `objetos` aceite `organizacao_id` e `concedente_id` como `NULL`.
+## 1. Relato Bruto do Usuário
+- "vc removeu o cnpj desse formulário?"
+- "Então tem que refatorar essa rota aqui. https://beneficiarios-app.vercel.app/admin/objetos/a96e9c93-9733-49aa-9a08-a438565fbbc9"
 
 ---
 
-## 2. Modalidades / Atividades Gerenciadas em Aba Dedicada com Criação Inline
-- **Classificação**: 🟡 **Alteração Estrutural de Domínio** + 🟢 **Evolução de UX**
-- **Diagnóstico Correto**: As modalidades são as atividades do projeto. O Objeto não deve ter um campo isolado de "modalidade principal" na sua criação. Na verdade, um projeto oferece múltiplas modalidades/atividades a partir do catálogo já cadastrado na área global de modalidades.
-- **Comportamento Esperado**:
-  - Remover o campo `modalidade_principal_id` do formulário inicial de Objeto (`/admin/objetos/novo`);
-  - Criar tabela associativa `objeto_modalidades` no Supabase para suportar N modalidades por projeto;
-  - Adicionar uma aba dedicada de **Atividades / Modalidades** na página de detalhes do Objeto (`/admin/objetos/[id]`);
-  - Na aba, o gestor visualiza e seleciona/vincula quais modalidades do catálogo estão autorizadas para o projeto;
-  - Disponibilizar na mesma aba o botão de **criação inline** em painel lateral deslizante (*Sheet / Sidebar*) com o formulário completo de modalidade, vinculando-a automaticamente ao projeto após salvar.
+## 2. Triagem e Classificação dos Apontamentos
 
----
+### 🔴 Bugs / Erros
+1. **Cards de Resumo do Topo Quebrados**:
+   - Card "Organização Social": exibe texto literal `CNPJ: ` vazio/undefined quando o projeto não possui OSC vinculada (`objeto.organizacao` é `null`);
+   - Card "Concedente Público": exibe `Esfera undefined` quando o projeto não possui órgão concedente vinculado (`objeto.concedente` é `null`);
+   - Card "Vigência": exibe `Meta: % freq.` quando `meta_frequencia_percentual` não está preenchida.
 
-## 3. Quadro de Metas como Aba Dedicada com Vocabulário Dinâmico
-- **Classificação**: 🟡 **Alteração Estrutural de Fluxo** + 🟢 **Evolução de Domínio**
-- **Diagnóstico Correto**: O formulário de criação de Objeto NÃO deve conter campos de metas (o campo solto `meta_frequencia_percentual` foi removido). As metas do projeto devem ser gerenciadas em uma **aba separada** dentro da página de detalhes do Objeto (`/admin/objetos/[id]`).
-- **Comportamento Esperado**:
-  - Essa aba só fica disponível após a criação do objeto (quando o vocabulário dinâmico e a vigência já foram gravados);
-  - Dentro da aba, os rótulos refletem o vocabulário definido para o projeto (ex: `{termo_beneficiario}s Atendidos`, `{termo_sessao}s Realizadas`, `{termo_grupo}s Ativas`, etc.);
-  - O gestor define e acompanha as metas contratuais a serem atingidas ao longo da vigência (tabela `objeto_metas`).
+### 🟡 Alterações / Ajustes Estruturais (UX & Arquitetura)
+2. **Abas Duplicadas e Aninhadas (Tabs dentro de Tabs)**:
+   - A página de detalhes externa (`objeto-detalhes-client.tsx`) possui abas externas para *Dados Gerais*, *Vocabulário Dinâmico*, *Atividades*, *Quadro de Metas*, *Polos* e *Formulário de Inscrição*;
+   - Porém, a primeira aba (*Dados Gerais*) renderiza o `ObjetoForm`, que agora **já possui internamente suas 5 abas** (*Identificação*, *Vocabulário*, *Atividades*, *Metas* e *Jurídico*);
+   - Isso cria uma experiência de abas aninhadas confusa e dados duplicados (Vocabulário, Atividades e Metas aparecem duas vezes em níveis diferentes).
+
+3. **Reestruturação da Gestão do Projeto em `/admin/objetos/[id]`**:
+   - Manter cards de topo limpos, informativos e sem campos nulos;
+   - Unificar a navegação para que o usuário possa editar os dados do projeto via `ObjetoForm` ou navegar diretamente pelas áreas operacionais do projeto (`Polos / Locais`, `Formulário Híbrido de Inscrição`, `Visão Consolidada`).

@@ -25,6 +25,7 @@ import {
   ExternalLink,
   Activity,
   Target,
+  ShieldCheck,
 } from "lucide-react";
 import type { Database } from "@/lib/database.types";
 
@@ -73,6 +74,7 @@ export function ObjetoDetalhesClient({
     <div className="space-y-6">
       {/* Resumo Rápido no Topo */}
       <div className="grid gap-4 md:grid-cols-4">
+        {/* Card 1: Formato Operacional & Atividades */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-xs font-medium text-muted-foreground">
@@ -86,60 +88,114 @@ export function ObjetoDetalhesClient({
             <div className="text-base font-bold truncate">
               {objeto.tipo === "continuo" ? "Rotinas Periódicas" : "Evento Pontual"}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {objeto.modalidade_principal?.nome ?? "Multimodal"}
+            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
+              <Activity className="h-3.5 w-3.5 text-primary shrink-0" />
+              <span>
+                {modalidadesVinculadas.length === 1
+                  ? "1 atividade autorizada"
+                  : `${modalidadesVinculadas.length} atividades autorizadas`}
+              </span>
             </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">
-              Organização Social
-            </CardTitle>
-            <Building className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-base font-bold truncate">
-              {objeto.organizacao?.nome_fantasia || objeto.organizacao?.razao_social}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1 font-mono">
-              CNPJ: {objeto.organizacao?.cnpj}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">
-              Concedente Público
-            </CardTitle>
-            <Landmark className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-base font-bold truncate">
-              {objeto.concedente?.sigla || objeto.concedente?.nome}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1 capitalize">
-              Esfera {objeto.concedente?.esfera}
-            </p>
-          </CardContent>
-        </Card>
-
+        {/* Card 2: Vigência Contratual & Status */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-xs font-medium text-muted-foreground">
               Vigência Contratual
             </CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+            {(() => {
+              const hoje = new Date().toISOString().split("T")[0];
+              if (hoje > objeto.data_fim) {
+                return <Badge variant="destructive">Encerrado</Badge>;
+              }
+              if (hoje >= objeto.data_inicio) {
+                return (
+                  <Badge variant="default" className="bg-emerald-600 hover:bg-emerald-700">
+                    Vigente
+                  </Badge>
+                );
+              }
+              return <Badge variant="secondary">A Iniciar</Badge>;
+            })()}
           </CardHeader>
           <CardContent>
             <div className="text-xs font-bold">
               {formatDate(objeto.data_inicio)} até {formatDate(objeto.data_fim)}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Meta: {objeto.meta_frequencia_percentual}% freq.
+            <p className="text-xs text-muted-foreground mt-1 truncate">
+              {objeto.processo_administrativo
+                ? `Proc: ${objeto.processo_administrativo}`
+                : `Convênio registrado`}
             </p>
+          </CardContent>
+        </Card>
+
+        {/* Card 3: Rede Territorial e Polos */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-xs font-medium text-muted-foreground">
+              Rede de {objeto.termo_local || "Polo"}s
+            </CardTitle>
+            <Badge variant="outline">
+              {(objeto.regioes?.length ?? 1) === 1
+                ? "Região Única"
+                : `${objeto.regioes?.length} Regiões`}
+            </Badge>
+          </CardHeader>
+          <CardContent>
+            <div className="text-base font-bold truncate">
+              {objeto.locais?.length ?? 0}{" "}
+              {(objeto.locais?.length ?? 0) === 1
+                ? objeto.termo_local || "Polo"
+                : `${objeto.termo_local || "Polo"}s`}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Espaços físicos vinculados
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Card 4: Governança, Parceria & MROSC */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-xs font-medium text-muted-foreground">
+              Parceria & Governança
+            </CardTitle>
+            <ShieldCheck className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            {objeto.organizacao ? (
+              <>
+                <div className="text-base font-bold truncate">
+                  {objeto.organizacao.nome_fantasia || objeto.organizacao.razao_social}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1 font-mono">
+                  CNPJ: {objeto.organizacao.cnpj}
+                </p>
+              </>
+            ) : objeto.termo_parceria_numero ? (
+              <>
+                <div className="text-base font-bold truncate">
+                  {objeto.termo_parceria_numero}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1 truncate">
+                  {objeto.representante_legal_nome
+                    ? `Resp: ${objeto.representante_legal_nome}`
+                    : "Termo de Parceria"}
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="text-base font-bold truncate text-muted-foreground">
+                  A Vincular OSC
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {metasData ? `${metasData.metas.length} metas pactuadas` : "Auditoria MROSC"}
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
