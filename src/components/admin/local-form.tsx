@@ -8,8 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, ArrowLeft, Check, Loader2, MapPin } from "lucide-react";
+import { AlertCircle, ArrowLeft, Check, Loader2, MapPin, Search } from "lucide-react";
 import Link from "next/link";
+import { maskCep, unmask } from "@/lib/utils/masks";
+import { buscarEnderecoPorCep } from "@/lib/services/cep";
+import { SelectUf } from "@/components/ui/select-uf";
 
 interface ObjetoOption {
   id: string;
@@ -85,6 +88,35 @@ export function LocalForm({
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [cepLoading, setCepLoading] = useState(false);
+  const [cepError, setCepError] = useState<string | null>(null);
+
+  async function handleCepChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const raw = e.target.value;
+    const masked = maskCep(raw);
+    setFormData((prev) => ({ ...prev, endereco_cep: masked }));
+    setCepError(null);
+
+    const clean = unmask(masked);
+    if (clean.length === 8) {
+      setCepLoading(true);
+      const res = await buscarEnderecoPorCep(clean);
+      setCepLoading(false);
+      if (res.success && res.data) {
+        setFormData((prev) => ({
+          ...prev,
+          endereco_logradouro: res.data.logradouro || prev.endereco_logradouro,
+          endereco_bairro: res.data.bairro || prev.endereco_bairro,
+          endereco_cidade: res.data.cidade || prev.endereco_cidade,
+          endereco_uf: res.data.uf || prev.endereco_uf,
+        }));
+        const numeroInput = document.getElementById("local_numero") as HTMLInputElement | null;
+        if (numeroInput) numeroInput.focus();
+      } else {
+        setCepError(res.error ?? "CEP não localizado.");
+      }
+    }
+  }
 
   // Regiões filtradas pelo objeto selecionado
   const availableRegioes = useMemo(() => {
@@ -264,10 +296,44 @@ export function LocalForm({
 
           {/* Seção 2: Localização Física */}
           <div className="space-y-4 pt-4 border-t border-border">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              2. Endereço e Localização
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                2. Endereço e Localização
+              </h3>
+              {cepLoading && (
+                <span className="flex items-center gap-1.5 text-xs text-primary font-medium">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Buscando endereço pelo CEP...
+                </span>
+              )}
+            </div>
+
+            {cepError && (
+              <div className="flex items-center gap-2 p-2.5 rounded-lg text-xs bg-destructive/10 text-destructive border border-destructive/20">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>{cepError}</span>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {/* CEP Primeiro com busca automática */}
+              <div className="space-y-2 md:col-span-1">
+                <Label htmlFor="local_cep">CEP</Label>
+                <div className="relative">
+                  <Input
+                    id="local_cep"
+                    value={formData.endereco_cep}
+                    onChange={handleCepChange}
+                    placeholder="00000-000"
+                    maxLength={9}
+                  />
+                  {cepLoading && (
+                    <Loader2 className="absolute right-2.5 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />
+                  )}
+                </div>
+              </div>
+
+              {/* Logradouro */}
               <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="local_logradouro">Logradouro (Rua / Av / Praça)</Label>
                 <Input
@@ -280,7 +346,8 @@ export function LocalForm({
                 />
               </div>
 
-              <div className="space-y-2">
+              {/* Número */}
+              <div className="space-y-2 md:col-span-1">
                 <Label htmlFor="local_numero">Número</Label>
                 <Input
                   id="local_numero"
@@ -292,7 +359,8 @@ export function LocalForm({
                 />
               </div>
 
-              <div className="space-y-2">
+              {/* Bairro */}
+              <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="local_bairro">Bairro</Label>
                 <Input
                   id="local_bairro"
@@ -304,7 +372,8 @@ export function LocalForm({
                 />
               </div>
 
-              <div className="space-y-2">
+              {/* Cidade */}
+              <div className="space-y-2 md:col-span-1">
                 <Label htmlFor="local_cidade">Cidade</Label>
                 <Input
                   id="local_cidade"
@@ -316,33 +385,16 @@ export function LocalForm({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-2">
-                  <Label htmlFor="local_uf">UF</Label>
-                  <Input
-                    id="local_uf"
-                    value={formData.endereco_uf}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        endereco_uf: e.target.value.toUpperCase().slice(0, 2),
-                      }))
-                    }
-                    placeholder="SP"
-                    maxLength={2}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="local_cep">CEP</Label>
-                  <Input
-                    id="local_cep"
-                    value={formData.endereco_cep}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, endereco_cep: e.target.value }))
-                    }
-                    placeholder="00000-000"
-                  />
-                </div>
+              {/* UF */}
+              <div className="space-y-2 md:col-span-1">
+                <Label htmlFor="local_uf">Estado / UF</Label>
+                <SelectUf
+                  id="local_uf"
+                  value={formData.endereco_uf}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, endereco_uf: e.target.value }))
+                  }
+                />
               </div>
             </div>
           </div>

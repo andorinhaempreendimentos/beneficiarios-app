@@ -30,6 +30,8 @@ import {
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
 import { EmptyState } from "@/components/admin/empty-state";
 import { Plus, Search, Edit2, Power, Landmark, AlertCircle } from "lucide-react";
+import { maskCnpj } from "@/lib/utils/masks";
+import { SelectUf } from "@/components/ui/select-uf";
 
 type Concedente = Database["public"]["Tables"]["concedentes"]["Row"];
 
@@ -80,7 +82,7 @@ export function ConcedentesClient({ initialConcedentes }: ConcedentesClientProps
       nome: item.nome,
       sigla: item.sigla ?? "",
       esfera: item.esfera as "municipal" | "estadual" | "federal",
-      cnpj: item.cnpj ?? "",
+      cnpj: item.cnpj ? maskCnpj(item.cnpj) : "",
       municipio: item.municipio ?? "",
       uf: item.uf ?? "",
       ativo: item.ativo,
@@ -323,8 +325,11 @@ export function ConcedentesClient({ initialConcedentes }: ConcedentesClientProps
                 id="conc_cnpj"
                 name="cnpj"
                 value={formData.cnpj}
-                onChange={handleInputChange}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, cnpj: maskCnpj(e.target.value) }))
+                }
                 placeholder="00.000.000/0000-00"
+                maxLength={18}
               />
             </div>
 
@@ -342,13 +347,10 @@ export function ConcedentesClient({ initialConcedentes }: ConcedentesClientProps
 
               <div className="space-y-2">
                 <Label htmlFor="conc_uf">UF</Label>
-                <Input
-                  id="conc_uf"
-                  name="uf"
+                <SelectUf
                   value={formData.uf}
-                  onChange={handleInputChange}
-                  placeholder="SP"
-                  maxLength={2}
+                  onValueChange={(val) => setFormData((prev) => ({ ...prev, uf: val }))}
+                  placeholder="UF..."
                 />
               </div>
             </div>

@@ -29,7 +29,10 @@ import {
 } from "@/components/ui/dialog";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
 import { EmptyState } from "@/components/admin/empty-state";
-import { Plus, Search, Edit2, Power, Building2, AlertCircle } from "lucide-react";
+import { Plus, Search, Edit2, Power, Building2, AlertCircle, Loader2 } from "lucide-react";
+import { maskCnpj, maskPhone, maskCep, unmask } from "@/lib/utils/masks";
+import { buscarEnderecoPorCep } from "@/lib/services/cep";
+import { SelectUf } from "@/components/ui/select-uf";
 
 type Organizacao = Database["public"]["Tables"]["organizacoes"]["Row"];
 
@@ -47,6 +50,36 @@ export function OrganizacoesClient({ initialOrganizacoes }: OrganizacoesClientPr
   // Confirmação de desativação/ativação
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [toggleTarget, setToggleTarget] = useState<Organizacao | null>(null);
+
+  const [cepLoading, setCepLoading] = useState(false);
+  const [cepError, setCepError] = useState<string | null>(null);
+
+  async function handleCepChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const raw = e.target.value;
+    const masked = maskCep(raw);
+    setFormData((prev) => ({ ...prev, endereco_cep: masked }));
+    setCepError(null);
+
+    const clean = unmask(masked);
+    if (clean.length === 8) {
+      setCepLoading(true);
+      const res = await buscarEnderecoPorCep(clean);
+      setCepLoading(false);
+      if (res.success && res.data) {
+        setFormData((prev) => ({
+          ...prev,
+          endereco_logradouro: res.data.logradouro || prev.endereco_logradouro,
+          endereco_bairro: res.data.bairro || prev.endereco_bairro,
+          endereco_cidade: res.data.cidade || prev.endereco_cidade,
+          endereco_uf: res.data.uf || prev.endereco_uf,
+        }));
+        const num = document.getElementById("org_numero") as HTMLInputElement | null;
+        if (num) num.focus();
+      } else {
+        setCepError(res.error ?? "CEP não encontrado.");
+      }
+    }
+  }
 
   // Form state
   const [formData, setFormData] = useState({
@@ -312,8 +345,11 @@ export function OrganizacoesClient({ initialOrganizacoes }: OrganizacoesClientPr
                   id="org_cnpj"
                   name="cnpj"
                   value={formData.cnpj}
-                  onChange={handleInputChange}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, cnpj: maskCnpj(e.target.value) }))
+                  }
                   placeholder="00.000.000/0000-00"
+                  maxLength={18}
                   required
                 />
               </div>
@@ -338,70 +374,111 @@ export function OrganizacoesClient({ initialOrganizacoes }: OrganizacoesClientPr
                   id="org_telefone"
                   name="telefone"
                   value={formData.telefone}
-                  onChange={handleInputChange}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, telefone: maskPhone(e.target.value) }))
+                  }
                   placeholder="(11) 99999-9999"
+                  maxLength={15}
                 />
               </div>
             </div>
 
-            {/* Endereço */}
+            {/* Endereço da Sede */}
             <div className="border-t border-border pt-3 space-y-3">
-              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Endereço da Sede
-              </h4>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="space-y-1 col-span-2">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Endereço da Sede
+                </h4>
+                {cepLoading && (
+                  <span className="flex items-center gap-1.5 text-xs text-primary font-medium">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Buscando CEP...
+                  </span>
+                )}
+              </div>
+
+              {cepError && (
+                <div className="flex items-center gap-2 p-2 rounded-md text-xs bg-destructive/10 text-destructive border border-destructive/20">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  <span>{cepError}</span>
+                </div>
+              )}
+
+              {/* CEP, Logradouro e Número */}
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                <div className="space-y-1 sm:col-span-1">
+                  <Label htmlFor="org_cep" className="text-xs">CEP</Label>
+                  <div className="relative">
+                    <Input
+                      id="org_cep"
+                      name="endereco_cep"
+                      value={formData.endereco_cep}
+                      onChange={handleCepChange}
+                      placeholder="00000-000"
+                      maxLength={9}
+                    />
+                    {cepLoading && (
+                      <Loader2 className="absolute right-2 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-1 sm:col-span-2">
                   <Label htmlFor="org_logradouro" className="text-xs">Logradouro</Label>
                   <Input
                     id="org_logradouro"
                     name="endereco_logradouro"
                     value={formData.endereco_logradouro}
                     onChange={handleInputChange}
-                    placeholder="Rua, Avenida..."
+                    placeholder="Rua, Avenida, Praça..."
                   />
                 </div>
-                <div className="space-y-1">
+
+                <div className="space-y-1 sm:col-span-1">
                   <Label htmlFor="org_numero" className="text-xs">Número</Label>
                   <Input
                     id="org_numero"
                     name="endereco_numero"
                     value={formData.endereco_numero}
                     onChange={handleInputChange}
-                    placeholder="123"
+                    placeholder="123 ou S/N"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-4 gap-3">
-                <div className="space-y-1 col-span-2">
+              {/* Bairro, Cidade e UF */}
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                <div className="space-y-1 sm:col-span-1">
+                  <Label htmlFor="org_bairro" className="text-xs">Bairro</Label>
+                  <Input
+                    id="org_bairro"
+                    name="endereco_bairro"
+                    value={formData.endereco_bairro}
+                    onChange={handleInputChange}
+                    placeholder="Bairro"
+                  />
+                </div>
+
+                <div className="space-y-1 sm:col-span-2">
                   <Label htmlFor="org_cidade" className="text-xs">Cidade</Label>
                   <Input
                     id="org_cidade"
                     name="endereco_cidade"
                     value={formData.endereco_cidade}
                     onChange={handleInputChange}
-                    placeholder="São Paulo"
+                    placeholder="Cidade"
                   />
                 </div>
-                <div className="space-y-1">
-                  <Label htmlFor="org_uf" className="text-xs">UF</Label>
-                  <Input
+
+                <div className="space-y-1 sm:col-span-1">
+                  <Label htmlFor="org_uf" className="text-xs">Estado / UF</Label>
+                  <SelectUf
                     id="org_uf"
                     name="endereco_uf"
                     value={formData.endereco_uf}
-                    onChange={handleInputChange}
-                    placeholder="SP"
-                    maxLength={2}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="org_cep" className="text-xs">CEP</Label>
-                  <Input
-                    id="org_cep"
-                    name="endereco_cep"
-                    value={formData.endereco_cep}
-                    onChange={handleInputChange}
-                    placeholder="00000-000"
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, endereco_uf: e.target.value }))
+                    }
                   />
                 </div>
               </div>

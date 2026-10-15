@@ -28,6 +28,7 @@ import {
   Check,
   RotateCcw,
 } from "lucide-react";
+import { maskCpf, maskPhone, unmask } from "@/lib/utils/masks";
 
 interface FormularioInscricaoPublicaProps {
   local: DadosPublicosLocal["local"];
@@ -46,22 +47,6 @@ const DIAS_SEMANA = [
   "Sexta-feira",
   "Sábado",
 ];
-
-function formatCPF(val: string) {
-  const digits = val.replace(/\D/g, "").slice(0, 11);
-  if (digits.length <= 3) return digits;
-  if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
-  if (digits.length <= 9)
-    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
-  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
-}
-
-function formatPhone(val: string) {
-  const digits = val.replace(/\D/g, "").slice(0, 11);
-  if (digits.length <= 2) return digits;
-  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
-  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
-}
 
 function calcularIdade(dataNasc: string) {
   if (!dataNasc) return null;
@@ -133,10 +118,10 @@ export function FormularioInscricaoPublica({
   // Busca automática por CPF
   const handleCpfChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawVal = e.target.value;
-    const formatted = formatCPF(rawVal);
+    const formatted = maskCpf(rawVal);
     setCpf(formatted);
 
-    const pureDigits = formatted.replace(/\D/g, "");
+    const pureDigits = unmask(formatted);
     if (pureDigits.length === 11) {
       const achado = await buscarBeneficiarioPublicoCpf(pureDigits);
       setCpfBuscado(true);
@@ -145,11 +130,11 @@ export function FormularioInscricaoPublica({
         setNomeCompleto(achado.nome_completo || "");
         setDataNascimento(achado.data_nascimento || "");
         setGenero(achado.genero || "M");
-        setTelefone(achado.telefone ? formatPhone(achado.telefone) : "");
+        setTelefone(achado.telefone ? maskPhone(achado.telefone) : "");
         setNomeResponsavel(achado.nome_responsavel || "");
         setTelefoneResponsavel(
           achado.telefone_responsavel
-            ? formatPhone(achado.telefone_responsavel)
+            ? maskPhone(achado.telefone_responsavel)
             : ""
         );
       } else {
@@ -494,6 +479,7 @@ export function FormularioInscricaoPublica({
                   placeholder="000.000.000-00"
                   value={cpf}
                   onChange={handleCpfChange}
+                  maxLength={14}
                   className="font-mono text-sm pr-10"
                 />
                 {beneficiarioEncontrado && (
@@ -575,7 +561,8 @@ export function FormularioInscricaoPublica({
                 id="telefone"
                 placeholder="(00) 00000-0000"
                 value={telefone}
-                onChange={(e) => setTelefone(formatPhone(e.target.value))}
+                onChange={(e) => setTelefone(maskPhone(e.target.value))}
+                maxLength={15}
               />
               <p className="text-[11px] text-muted-foreground">
                 Importante para avisos de início das aulas e confirmação de vaga.
@@ -616,8 +603,9 @@ export function FormularioInscricaoPublica({
                       placeholder="(00) 00000-0000"
                       value={telefoneResponsavel}
                       onChange={(e) =>
-                        setTelefoneResponsavel(formatPhone(e.target.value))
+                        setTelefoneResponsavel(maskPhone(e.target.value))
                       }
+                      maxLength={15}
                       className="bg-background"
                     />
                   </div>

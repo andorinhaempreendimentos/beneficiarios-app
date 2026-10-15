@@ -39,6 +39,7 @@ import {
   AlertCircle,
   ShieldCheck,
 } from "lucide-react";
+import { maskCpf, maskPhone } from "@/lib/utils/masks";
 
 type FuncionarioRow = Database["public"]["Tables"]["funcionarios"]["Row"];
 type ObjetoSimple = Pick<Database["public"]["Tables"]["objetos"]["Row"], "id" | "nome">;
@@ -152,13 +153,13 @@ export function FuncionariosClient({
     setEditingItem(item);
     setFormData({
       nome_completo: item.nome_completo,
-      cpf: item.cpf,
+      cpf: item.cpf ? maskCpf(item.cpf) : "",
       cargo: item.cargo,
       objeto_id: item.objeto_id,
       organizacao_id: item.organizacao_id,
       local_id: item.local_id ?? "",
       email: item.email ?? "",
-      telefone: item.telefone ?? "",
+      telefone: item.telefone ? maskPhone(item.telefone) : "",
       data_admissao: item.data_admissao ?? "",
       data_desligamento: item.data_desligamento ?? "",
       carga_horaria_semanal: item.carga_horaria_semanal ?? 40,
@@ -499,7 +500,8 @@ export function FuncionariosClient({
                   required
                   placeholder="000.000.000-00"
                   value={formData.cpf}
-                  onChange={(e) => setFormData({ ...formData, cpf: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, cpf: maskCpf(e.target.value) })}
+                  maxLength={14}
                 />
               </div>
 
@@ -641,7 +643,8 @@ export function FuncionariosClient({
                   id="telefone"
                   placeholder="(00) 00000-0000"
                   value={formData.telefone}
-                  onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, telefone: maskPhone(e.target.value) })}
+                  maxLength={15}
                 />
               </div>
 

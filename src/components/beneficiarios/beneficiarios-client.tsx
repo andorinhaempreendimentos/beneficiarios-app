@@ -44,6 +44,7 @@ import {
   AlertCircle,
   FileText,
 } from "lucide-react";
+import { maskCpf, maskPhone } from "@/lib/utils/masks";
 
 interface ObjetoSimple {
   id: string;
@@ -194,30 +195,19 @@ export function BeneficiariosClient({
     setEditingId(b.id);
     setFormData({
       nome_completo: b.nome_completo,
-      cpf: formatarCpf(b.cpf),
+      cpf: b.cpf ? maskCpf(b.cpf) : "",
       data_nascimento: b.data_nascimento,
       genero: b.genero as BeneficiarioFormData["genero"],
-      telefone: b.telefone || "",
+      telefone: b.telefone ? maskPhone(b.telefone) : "",
       nome_responsavel: b.nome_responsavel || "",
-      telefone_responsavel: b.telefone_responsavel || "",
+      telefone_responsavel: b.telefone_responsavel ? maskPhone(b.telefone_responsavel) : "",
     });
     setFormError(null);
     setIsModalOpen(true);
   };
 
   const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = e.target.value.replace(/\D/g, "");
-    if (raw.length <= 11) {
-      let masked = raw;
-      if (raw.length > 9) {
-        masked = raw.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, "$1.$2.$3-$4");
-      } else if (raw.length > 6) {
-        masked = raw.replace(/(\d{3})(\d{3})(\d{1,3})/, "$1.$2.$3");
-      } else if (raw.length > 3) {
-        masked = raw.replace(/(\d{3})(\d{1,3})/, "$1.$2");
-      }
-      setFormData((prev) => ({ ...prev, cpf: masked }));
-    }
+    setFormData((prev) => ({ ...prev, cpf: maskCpf(e.target.value) }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -701,6 +691,7 @@ export function BeneficiariosClient({
                   placeholder="000.000.000-00"
                   value={formData.cpf}
                   onChange={handleCpfChange}
+                  maxLength={14}
                   disabled={Boolean(editingId)} // CPF é imutável em edição para preservar integridade
                 />
                 {editingId && (
@@ -763,8 +754,9 @@ export function BeneficiariosClient({
                   placeholder="(00) 00000-0000"
                   value={formData.telefone}
                   onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, telefone: e.target.value }))
+                    setFormData((prev) => ({ ...prev, telefone: maskPhone(e.target.value) }))
                   }
+                  maxLength={15}
                 />
               </div>
             </div>
@@ -814,9 +806,10 @@ export function BeneficiariosClient({
                       onChange={(e) =>
                         setFormData((prev) => ({
                           ...prev,
-                          telefone_responsavel: e.target.value,
+                          telefone_responsavel: maskPhone(e.target.value),
                         }))
                       }
+                      maxLength={15}
                     />
                   </div>
                 </div>
