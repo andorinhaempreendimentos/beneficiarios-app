@@ -200,32 +200,20 @@ export function ObjetoDetalhesClient({
         </Card>
       </div>
 
-      {/* Abas de Navegação e Configuração */}
+      {/* Abas de Navegação e Gestão Operacional */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="flex flex-wrap w-full lg:w-fit gap-1 bg-muted/60 p-1 rounded-lg">
           <TabsTrigger value="geral" className="gap-2">
             <FileText className="h-4 w-4" />
-            <span>Dados Gerais</span>
-          </TabsTrigger>
-          <TabsTrigger value="vocabulario" className="gap-2">
-            <Languages className="h-4 w-4" />
-            <span>Vocabulário Dinâmico</span>
-          </TabsTrigger>
-          <TabsTrigger value="modalidades" className="gap-2">
-            <Activity className="h-4 w-4" />
-            <span>Atividades ({modalidadesVinculadas?.length ?? 0})</span>
+            <span>Configurações do Projeto</span>
           </TabsTrigger>
           <TabsTrigger value="metas" className="gap-2">
             <Target className="h-4 w-4" />
-            <span>Metas ({metasData?.metas?.length ?? 0})</span>
-          </TabsTrigger>
-          <TabsTrigger value="regioes" className="gap-2">
-            <Compass className="h-4 w-4" />
-            <span>Regiões ({objeto.regioes?.length ?? 0})</span>
+            <span>Execução de Metas ({metasData?.metas?.length ?? 0})</span>
           </TabsTrigger>
           <TabsTrigger value="locais" className="gap-2">
             <MapPin className="h-4 w-4" />
-            <span>Polos ({objeto.locais?.length ?? 0})</span>
+            <span>{objeto.termo_local || "Polo"}s & Regiões ({objeto.locais?.length ?? 0})</span>
           </TabsTrigger>
           <TabsTrigger value="perguntas" className="gap-2">
             <HelpCircle className="h-4 w-4" />
@@ -233,7 +221,7 @@ export function ObjetoDetalhesClient({
           </TabsTrigger>
         </TabsList>
 
-        {/* Aba 1: Dados Gerais e Edição */}
+        {/* Aba 1: Configurações do Projeto (Formulário Completo em 5 Abas) */}
         <TabsContent value="geral">
           <ObjetoForm
             initialData={objeto}
@@ -253,179 +241,126 @@ export function ObjetoDetalhesClient({
           />
         </TabsContent>
 
-        {/* Aba Atividades & Modalidades do Projeto */}
-        <TabsContent value="modalidades">
-          <ObjetoModalidadesTab
-            objetoId={objeto.id}
-            initialVinculadas={modalidadesVinculadas}
-            catalogoModalidades={modalidades}
-            termoGrupo={objeto.termo_grupo}
-          />
-        </TabsContent>
-
-        {/* Aba Metas do Projeto (MROSC com Vocabulário Dinâmico) */}
-        {metasData && (
-          <TabsContent value="metas">
+        {/* Aba 2: Execução de Metas MROSC (Painel de Auditoria & Acompanhamento) */}
+        <TabsContent value="metas">
+          {metasData ? (
             <ObjetoMetasTab
               objetoId={objeto.id}
               initialData={metasData}
               vocabulario={objeto}
             />
-          </TabsContent>
-        )}
-
-        {/* Aba 2: Vocabulário Dinâmico (§4.3) */}
-        <TabsContent value="vocabulario">
-          <Card>
-            <CardHeader>
-              <CardTitle>Glossário Personalizado do Projeto (§4.3)</CardTitle>
-              <CardDescription>
-                Termos linguísticos ativos para este projeto. Todas as telas, chamadas, relatórios e menus adaptam-se dinamicamente a estes vocábulos.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="p-4 rounded-lg border border-border bg-muted/20 space-y-1">
-                  <div className="text-xs font-medium text-muted-foreground">Termo Canônico: Beneficiário</div>
-                  <div className="text-lg font-bold text-primary">{objeto.termo_beneficiario}</div>
-                  <p className="text-xs text-muted-foreground">Exibido na lista de chamada, autoinscrição e matrículas.</p>
-                </div>
-
-                <div className="p-4 rounded-lg border border-border bg-muted/20 space-y-1">
-                  <div className="text-xs font-medium text-muted-foreground">Termo Canônico: Instrutor</div>
-                  <div className="text-lg font-bold text-primary">{objeto.termo_instrutor}</div>
-                  <p className="text-xs text-muted-foreground">Exibido no painel de campo e na assinatura de presença.</p>
-                </div>
-
-                <div className="p-4 rounded-lg border border-border bg-muted/20 space-y-1">
-                  <div className="text-xs font-medium text-muted-foreground">Termo Canônico: Grupo / Turma</div>
-                  <div className="text-lg font-bold text-primary">{objeto.termo_grupo}</div>
-                  <p className="text-xs text-muted-foreground">Exibido no controle de vagas, faixas etárias e horários.</p>
-                </div>
-
-                <div className="p-4 rounded-lg border border-border bg-muted/20 space-y-1">
-                  <div className="text-xs font-medium text-muted-foreground">Termo Canônico: Sessão</div>
-                  <div className="text-lg font-bold text-primary">{objeto.termo_sessao}</div>
-                  <p className="text-xs text-muted-foreground">Exibido no registro individual de presença e fotos comprobatórias.</p>
-                </div>
-
-                <div className="p-4 rounded-lg border border-border bg-muted/20 space-y-1">
-                  <div className="text-xs font-medium text-muted-foreground">Termo Canônico: Bloco de Horário</div>
-                  <div className="text-lg font-bold text-primary">{objeto.termo_bloco}</div>
-                  <p className="text-xs text-muted-foreground">Exibido na grade de horários semanais e agendas.</p>
-                </div>
-
-                <div className="p-4 rounded-lg border border-border bg-muted/20 space-y-1">
-                  <div className="text-xs font-medium text-muted-foreground">Termo Canônico: Local / Polo</div>
-                  <div className="text-lg font-bold text-primary">{objeto.termo_local}</div>
-                  <p className="text-xs text-muted-foreground">Exibido nos links de autoinscrição pública e supervisão.</p>
-                </div>
-
-                <div className="p-4 rounded-lg border border-border bg-muted/20 space-y-1">
-                  <div className="text-xs font-medium text-muted-foreground">Termo Canônico: Materiais Coletivos</div>
-                  <div className="text-lg font-bold text-primary">{objeto.termo_materiais_coletivos}</div>
-                  <p className="text-xs text-muted-foreground">Exibido no controle patrimonial dos polos esportivos.</p>
-                </div>
-
-                <div className="p-4 rounded-lg border border-border bg-muted/20 space-y-1">
-                  <div className="text-xs font-medium text-muted-foreground">Termo Canônico: Materiais Individuais</div>
-                  <div className="text-lg font-bold text-primary">{objeto.termo_materiais_concedidos}</div>
-                  <p className="text-xs text-muted-foreground">Exibido na entrega individual de kits com foto e assinatura.</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Aba 3: Regiões Vinculadas (§3.2) */}
-        <TabsContent value="regioes" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-base font-semibold">Regiões Territoriais do Projeto</h3>
-              <p className="text-xs text-muted-foreground">
-                Todo projeto possui obrigatoriamente a Região Única ou subdivisões para alocação de polos.
-              </p>
-            </div>
-            <Button size="sm" render={<Link href="/admin/regioes" />} className="gap-1.5">
-              <Plus className="h-4 w-4" />
-              <span>Gerenciar Regiões</span>
-            </Button>
-          </div>
-
-          <div className="rounded-lg border border-border bg-card overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome da Região</TableHead>
-                  <TableHead>Coordenador Titular</TableHead>
-                  <TableHead>Polos Vinculados</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {objeto.regioes?.map((reg: RegiaoRow) => {
-                  const locaisDaRegiao = objeto.locais?.filter((l: LocalRow) => l.regiao_id === reg.id) ?? [];
-                  return (
-                    <TableRow key={reg.id}>
-                      <TableCell className="font-medium">{reg.nome}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {reg.coordenador_id ? "Coordenador vinculado" : "Sem coordenador atribuído"}
-                      </TableCell>
-                      <TableCell className="text-xs">
-                        <Badge variant="outline">{locaisDaRegiao.length} polos</Badge>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
-        </TabsContent>
-
-        {/* Aba 4: Polos / Locais Vinculados */}
-        <TabsContent value="locais" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-base font-semibold">Polos Físicos de Atendimento</h3>
-              <p className="text-xs text-muted-foreground">
-                Locais onde os instrutores realizam as atividades e recebem as vistorias de supervisão.
-              </p>
-            </div>
-            <Button size="sm" render={<Link href="/admin/locais" />} className="gap-1.5">
-              <Plus className="h-4 w-4" />
-              <span>Gerenciar Polos</span>
-            </Button>
-          </div>
-
-          {!objeto.locais || objeto.locais.length === 0 ? (
-            <div className="p-8 text-center border border-dashed rounded-lg bg-card/40 text-sm text-muted-foreground">
-              Nenhum polo cadastrado para este projeto ainda.
-            </div>
           ) : (
+            <Card>
+              <CardContent className="p-8 text-center text-muted-foreground">
+                <Target className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm font-medium">Nenhuma meta configurada ainda.</p>
+                <p className="text-xs mt-1">
+                  Acesse a aba <strong>Configurações do Projeto</strong> e adicione metas no Quadro de Metas.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        {/* Aba 3: Polos e Regiões Territoriais */}
+        <TabsContent value="locais" className="space-y-6">
+          {/* Seção de Polos Físicos */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-semibold">
+                  {objeto.termo_local || "Polo"}s de Atendimento
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Espaços físicos onde ocorrem as atividades práticas e vistorias de supervisão.
+                </p>
+              </div>
+              <Button size="sm" render={<Link href="/admin/locais/novo" />} className="gap-1.5">
+                <Plus className="h-4 w-4" />
+                <span>+ Novo {objeto.termo_local || "Polo"}</span>
+              </Button>
+            </div>
+
+            {!objeto.locais || objeto.locais.length === 0 ? (
+              <div className="p-8 text-center border border-dashed rounded-lg bg-card/40 text-sm text-muted-foreground">
+                Nenhum {objeto.termo_local || "polo"} cadastrado para este projeto ainda.
+              </div>
+            ) : (
+              <div className="rounded-lg border border-border bg-card overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nome do {objeto.termo_local || "Polo"}</TableHead>
+                      <TableHead>Região Obrigatória</TableHead>
+                      <TableHead>Endereço</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {objeto.locais.map((loc: LocalRow) => {
+                      const regiaoDoPolo = objeto.regioes?.find((r: RegiaoRow) => r.id === loc.regiao_id);
+                      return (
+                        <TableRow key={loc.id}>
+                          <TableCell className="font-medium">{loc.nome}</TableCell>
+                          <TableCell className="text-xs">
+                            <Badge variant="outline">{regiaoDoPolo?.nome ?? "Região Única"}</Badge>
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground">
+                            {loc.endereco_cidade ? `${loc.endereco_cidade}/${loc.endereco_uf}` : "—"}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={loc.ativo ? "default" : "secondary"}>
+                              {loc.ativo ? "Ativo" : "Inativo"}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </div>
+
+          {/* Seção de Regiões Territoriais */}
+          <div className="space-y-4 pt-4 border-t border-border">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-semibold">Regiões Territoriais</h3>
+                <p className="text-xs text-muted-foreground">
+                  Todo projeto possui obrigatoriamente a Região Única ou subdivisões para vinculação de coordenadores.
+                </p>
+              </div>
+              <Button size="sm" variant="outline" render={<Link href="/admin/regioes" />} className="gap-1.5">
+                <Compass className="h-4 w-4" />
+                <span>Gerenciar Regiões</span>
+              </Button>
+            </div>
+
             <div className="rounded-lg border border-border bg-card overflow-hidden">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Nome do Polo</TableHead>
-                    <TableHead>Região Obrigatória</TableHead>
-                    <TableHead>Endereço</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>Nome da Região</TableHead>
+                    <TableHead>Coordenador Titular</TableHead>
+                    <TableHead>Polos Vinculados</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {objeto.locais.map((loc: LocalRow) => {
-                    const regiaoDoPolo = objeto.regioes?.find((r: RegiaoRow) => r.id === loc.regiao_id);
+                  {objeto.regioes?.map((reg: RegiaoRow) => {
+                    const locaisDaRegiao = objeto.locais?.filter((l: LocalRow) => l.regiao_id === reg.id) ?? [];
                     return (
-                      <TableRow key={loc.id}>
-                        <TableCell className="font-medium">{loc.nome}</TableCell>
-                        <TableCell className="text-xs">
-                          <Badge variant="outline">{regiaoDoPolo?.nome ?? "Região Única"}</Badge>
-                        </TableCell>
+                      <TableRow key={reg.id}>
+                        <TableCell className="font-medium">{reg.nome}</TableCell>
                         <TableCell className="text-xs text-muted-foreground">
-                          {loc.endereco_cidade ? `${loc.endereco_cidade}/${loc.endereco_uf}` : "—"}
+                          {reg.coordenador_id ? "Coordenador vinculado" : "Sem coordenador atribuído"}
                         </TableCell>
-                        <TableCell>
-                          <Badge variant={loc.ativo ? "default" : "secondary"}>
-                            {loc.ativo ? "Ativo" : "Inativo"}
+                        <TableCell className="text-xs">
+                          <Badge variant="outline">
+                            {locaisDaRegiao.length}{" "}
+                            {locaisDaRegiao.length === 1
+                              ? objeto.termo_local || "polo"
+                              : `${objeto.termo_local || "polo"}s`}
                           </Badge>
                         </TableCell>
                       </TableRow>
@@ -434,10 +369,10 @@ export function ObjetoDetalhesClient({
                 </TableBody>
               </Table>
             </div>
-          )}
+          </div>
         </TabsContent>
 
-        {/* Aba 5: Formulário de Inscrição & Perguntas */}
+        {/* Aba 4: Formulário de Inscrição & Perguntas */}
         <TabsContent value="perguntas" className="space-y-4">
           <Card>
             <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
