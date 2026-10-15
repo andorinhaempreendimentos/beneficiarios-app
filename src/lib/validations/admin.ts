@@ -316,6 +316,26 @@ export const usuarioPapelEnum = z.enum(
   { message: "Selecione o papel de acesso" }
 );
 
+export const novoFuncionarioParaUsuarioSchema = z.object({
+  cpf: z
+    .string()
+    .min(11, "CPF deve ter no mínimo 11 dígitos")
+    .max(14, "CPF inválido"),
+  cargo: z.string().min(2, "Cargo contratual é obrigatório"),
+  organizacao_id: z.string().uuid("Organização empregadora obrigatória"),
+  objeto_id: z.string().uuid("Projeto de alocação obrigatório"),
+  local_id: z
+    .string()
+    .uuid("Polo inválido")
+    .optional()
+    .nullable()
+    .or(z.literal("")),
+  telefone: z.string().optional().nullable(),
+  carga_horaria_semanal: z.coerce.number().min(0).optional().nullable().default(40),
+});
+
+export type NovoFuncionarioParaUsuarioInput = z.infer<typeof novoFuncionarioParaUsuarioSchema>;
+
 export const usuarioSchema = z.object({
   nome_completo: z.string().min(2, "Nome completo é obrigatório"),
   email: z.string().email("E-mail de acesso inválido"),
@@ -332,6 +352,7 @@ export const usuarioSchema = z.object({
     .optional()
     .nullable()
     .or(z.literal("")),
+  novo_funcionario: novoFuncionarioParaUsuarioSchema.optional().nullable(),
   objetos_ids: z.array(z.string().uuid()).default([]),
 });
 

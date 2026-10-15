@@ -178,8 +178,44 @@ export async function createUsuario(input: UsuarioInput) {
     await supabase.from("usuario_acessos").insert(acessosParaInserir);
   }
 
-  // 4. Vincular funcionário se especificado (§3.2 e §4.1)
-  if (parsed.data.funcionario_id) {
+  // 4. Vincular ou Criar Funcionário (RH de Campo §3.2 e §4.1)
+  if (parsed.data.novo_funcionario) {
+    const cleanCpf = parsed.data.novo_funcionario.cpf.replace(/\D/g, "");
+    const { error: funcError } = await supabase.from("funcionarios").insert({
+      nome_completo: parsed.data.nome_completo,
+      cpf: cleanCpf,
+      cargo: parsed.data.novo_funcionario.cargo,
+      organizacao_id: parsed.data.novo_funcionario.organizacao_id,
+      objeto_id: parsed.data.novo_funcionario.objeto_id,
+      local_id: parsed.data.novo_funcionario.local_id || null,
+      telefone: parsed.data.novo_funcionario.telefone || null,
+      email: parsed.data.email.trim().toLowerCase(),
+      carga_horaria_semanal: parsed.data.novo_funcionario.carga_horaria_semanal || 40,
+      data_admissao: new Date().toISOString().split("T")[0],
+      situacao: "ativo",
+      usuario_id: userId,
+    });
+
+    if (funcError) {
+      return {
+        success: false,
+        error: `Usuário criado, mas houve falha ao gerar o registro de RH: ${funcError.message}`,
+      };
+    }
+
+    // Garantir que o projeto do funcionário esteja nos acessos escopados do usuário
+    if (
+      parsed.data.novo_funcionario.objeto_id &&
+      (!parsed.data.objetos_ids ||
+        !parsed.data.objetos_ids.includes(parsed.data.novo_funcionario.objeto_id))
+    ) {
+      await supabase.from("usuario_acessos").insert({
+        usuario_id: userId,
+        objeto_id: parsed.data.novo_funcionario.objeto_id,
+        perfil: parsed.data.papel,
+      });
+    }
+  } else if (parsed.data.funcionario_id) {
     await supabase
       .from("funcionarios")
       .update({ usuario_id: userId, atualizado_em: new Date().toISOString() })

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import type { UsuarioComDetalhes } from "@/lib/actions/usuarios";
 import {
   createUsuario,
@@ -40,7 +40,13 @@ import {
   AlertCircle,
   FolderLock,
   UserCheck,
+  Briefcase,
+  UserPlus,
+  Link2,
+  Building2,
+  MapPin,
 } from "lucide-react";
+import { maskCpf, maskPhone } from "@/lib/utils/masks";
 
 interface ObjetoSimple {
   id: string;
@@ -54,10 +60,24 @@ interface FuncionarioSimple {
   usuario_id: string | null;
 }
 
+interface OrganizacaoSimple {
+  id: string;
+  razao_social: string;
+  nome_fantasia: string | null;
+}
+
+interface LocalSimple {
+  id: string;
+  nome: string;
+  objeto_id: string;
+}
+
 interface UsuariosClientProps {
   initialUsuarios: UsuarioComDetalhes[];
   objetos: ObjetoSimple[];
   funcionarios: FuncionarioSimple[];
+  organizacoes?: OrganizacaoSimple[];
+  locais?: LocalSimple[];
 }
 
 const PAPEIS_INFO: Record<
@@ -100,6 +120,8 @@ export function UsuariosClient({
   initialUsuarios,
   objetos,
   funcionarios,
+  organizacoes = [],
+  locais = [],
 }: UsuariosClientProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPapel, setSelectedPapel] = useState<string>("todos");
@@ -134,10 +156,43 @@ export function UsuariosClient({
     ativo: true,
     funcionario_id: "",
     objetos_ids: [] as string[],
+    // Vínculo dinâmico de RH (§3.2 e §4.1)
+    rhMode: "novo" as "novo" | "existente" | "nenhum",
+    novo_cpf: "",
+    novo_cargo: "Instrutor de Atividades",
+    novo_organizacao_id: "",
+    novo_objeto_id: "",
+    novo_local_id: "",
+    novo_telefone: "",
+    novo_carga_horaria: 40,
   });
+
+  function getCargoSugerido(papel: string): string {
+    switch (papel) {
+      case "instrutor":
+        return "Instrutor de Atividades";
+      case "supervisor":
+        return "Supervisor de Campo";
+      case "coordenador":
+        return "Coordenador Regional";
+      default:
+        return "Colaborador de Campo";
+    }
+  }
+
+  // Locais filtrados para o projeto selecionado na seção de novo RH
+  const locaisParaRh = useMemo<LocalSimple[]>(() => {
+    if (!formData.novo_objeto_id) return [];
+    return locais.filter((l) => l.objeto_id === formData.novo_objeto_id);
+  }, [formData.novo_objeto_id, locais]);
 
   function openCreateModal() {
     setEditingItem(null);
+    const defaultOrgId = organizacoes.length > 0 ? organizacoes[0].id : "";
+    const defaultObjId = objetos.length > 0 ? objetos[0].id : "";
+    const availableLocs = locais.filter((l) => l.objeto_id === defaultObjId);
+    const defaultLocId = availableLocs.length > 0 ? availableLocs[0].id : "";
+
     setFormData({
       nome_completo: "",
       email: "",
@@ -145,7 +200,15 @@ export function UsuariosClient({
       papel: "instrutor",
       ativo: true,
       funcionario_id: "",
-      objetos_ids: [],
+      objetos_ids: defaultObjId ? [defaultObjId] : [],
+      rhMode: "novo",
+      novo_cpf: "",
+      novo_cargo: "Instrutor de Atividades",
+      novo_organizacao_id: defaultOrgId,
+      novo_objeto_id: defaultObjId,
+      novo_local_id: defaultLocId,
+      novo_telefone: "",
+      novo_carga_horaria: 40,
     });
     setErrorMsg(null);
     setModalOpen(true);
@@ -161,9 +224,37 @@ export function UsuariosClient({
       ativo: item.ativo,
       funcionario_id: item.funcionario?.id ?? "",
       objetos_ids: item.acessos.map((a) => a.objeto_id),
+      rhMode: item.funcionario ? "existente" : "nenhum",
+      novo_cpf: "",
+      novo_cargo: "",
+      novo_organizacao_id: "",
+      novo_objeto_id: "",
+      novo_local_id: "",
+      novo_telefone: "",
+      novo_carga_horaria: 40,
     });
     setErrorMsg(null);
     setModalOpen(true);
+  }
+
+  function handlePapelChange(newPapel: typeof formData.papel) {
+    setFormData((prev) => ({
+      ...prev,
+      papel: newPapel,
+      novo_cargo: getCargoSugerido(newPapel),
+    }));
+  }
+
+  function handleNovoObjetoChange(newObjId: string) {
+    const available = locais.filter((l) => l.objeto_id === newObjId);
+    setFormData((prev) => ({
+      ...prev,
+      novo_objeto_id: newObjId,
+      novo_local_id: available.length > 0 ? available[0].id : "",
+      objetos_ids: prev.objetos_ids.includes(newObjId)
+        ? prev.objetos_ids
+        : [...prev.objetos_ids, newObjId],
+    }));
   }
 
   function toggleObjetoSelection(objId: string) {
@@ -188,17 +279,73 @@ export function UsuariosClient({
     setLoading(true);
     setErrorMsg(null);
 
+    const isPapelDeCampo = ["instrutor", "supervisor", "coordenador"].includes(formData.papel);
+
+    // Validações específicas para criação com novo RH
+    if (!editingItem && isPapelDeCampo && formData.rhMode === "novo") {
+      const pureCpf = formData.novo_cpf.replace(/\D/g, "");
+      if (pureCpf.length !== 11) {
+        setErrorMsg("Por favor, preencha um CPF válido com 11 dígitos para o registro de RH.");
+        setLoading(false);
+        return;
+      }
+      if (!formData.novo_cargo.trim()) {
+        setErrorMsg("Por favor, informe o cargo contratual do colaborador para o RH.");
+        setLoading(false);
+        return;
+      }
+      if (!formData.novo_organizacao_id) {
+        setErrorMsg("Por favor, selecione a Organização Social empregadora.");
+        setLoading(false);
+        return;
+      }
+      if (!formData.novo_objeto_id) {
+        setErrorMsg("Por favor, selecione o projeto social de alocação.");
+        setLoading(false);
+        return;
+      }
+    }
+
+    let objetosIdsFinais =
+      formData.papel === "super_admin" || formData.papel === "admin_geral"
+        ? []
+        : formData.objetos_ids;
+
+    if (
+      !editingItem &&
+      isPapelDeCampo &&
+      formData.rhMode === "novo" &&
+      formData.novo_objeto_id &&
+      !objetosIdsFinais.includes(formData.novo_objeto_id)
+    ) {
+      objetosIdsFinais = [...objetosIdsFinais, formData.novo_objeto_id];
+    }
+
     const payload = {
       nome_completo: formData.nome_completo,
       email: formData.email,
       senha: formData.senha ? formData.senha : undefined,
       papel: formData.papel,
       ativo: formData.ativo,
-      funcionario_id: formData.funcionario_id ? formData.funcionario_id : null,
-      objetos_ids:
-        formData.papel === "super_admin" || formData.papel === "admin_geral"
-          ? []
-          : formData.objetos_ids,
+      funcionario_id:
+        formData.rhMode === "existente" && formData.funcionario_id
+          ? formData.funcionario_id
+          : null,
+      novo_funcionario:
+        !editingItem && isPapelDeCampo && formData.rhMode === "novo"
+          ? {
+              cpf: formData.novo_cpf,
+              cargo: formData.novo_cargo.trim(),
+              organizacao_id: formData.novo_organizacao_id,
+              objeto_id: formData.novo_objeto_id,
+              local_id: formData.novo_local_id ? formData.novo_local_id : null,
+              telefone: formData.novo_telefone ? formData.novo_telefone : null,
+              carga_horaria_semanal: formData.novo_carga_horaria
+                ? Number(formData.novo_carga_horaria)
+                : 40,
+            }
+          : null,
+      objetos_ids: objetosIdsFinais,
     };
 
     let result;
@@ -527,10 +674,7 @@ export function UsuariosClient({
                   required
                   value={formData.papel}
                   onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      papel: e.target.value as typeof formData.papel,
-                    })
+                    handlePapelChange(e.target.value as typeof formData.papel)
                   }
                   className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 >
@@ -571,22 +715,273 @@ export function UsuariosClient({
                 </div>
               )}
 
-              <div className="space-y-1.5 pt-1 border-t border-border">
-                <Label htmlFor="funcionario_id">Vínculo com Funcionário (RH de Campo)</Label>
-                <select
-                  id="funcionario_id"
-                  value={formData.funcionario_id}
-                  onChange={(e) => setFormData({ ...formData, funcionario_id: e.target.value })}
-                  className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                >
-                  <option value="">Apenas conta de acesso (sem vínculo em carteira)</option>
-                  {funcionarios.map((f) => (
-                    <option key={f.id} value={f.id}>
-                      {f.nome_completo} ({f.cargo})
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {/* Seção de Vínculo de RH Dinâmico para Papéis de Campo (§3.2 e §4.1) */}
+              {!editingItem &&
+                ["instrutor", "supervisor", "coordenador"].includes(formData.papel) && (
+                  <div className="rounded-lg border border-primary/30 bg-primary/5 p-3.5 space-y-3">
+                    <div className="flex items-center justify-between border-b border-primary/20 pb-2">
+                      <div className="flex items-center gap-2">
+                        <Briefcase className="h-4 w-4 text-primary" />
+                        <Label className="font-semibold text-foreground text-sm">
+                          Vínculo Trabalhista / RH do Profissional
+                        </Label>
+                      </div>
+                      <Badge variant="outline" className="text-[10px] bg-background">
+                        Prestação de Contas
+                      </Badge>
+                    </div>
+
+                    <p className="text-xs text-muted-foreground">
+                      Como o perfil atua diretamente nas atividades em campo, configure o registro de RH para prestação de contas:
+                    </p>
+
+                    {/* Alternador de Modo de RH */}
+                    <div className="grid grid-cols-3 gap-1.5 p-1 bg-background/80 rounded-md border text-xs">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFormData((prev) => ({ ...prev, rhMode: "novo" }))
+                        }
+                        className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded font-medium transition-colors ${
+                          formData.rhMode === "novo"
+                            ? "bg-primary text-primary-foreground shadow-xs"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        <UserPlus className="h-3.5 w-3.5" />
+                        <span>Novo RH</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFormData((prev) => ({ ...prev, rhMode: "existente" }))
+                        }
+                        className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded font-medium transition-colors ${
+                          formData.rhMode === "existente"
+                            ? "bg-primary text-primary-foreground shadow-xs"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        <Link2 className="h-3.5 w-3.5" />
+                        <span>Vincular Existente</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFormData((prev) => ({ ...prev, rhMode: "nenhum" }))
+                        }
+                        className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded font-medium transition-colors ${
+                          formData.rhMode === "nenhum"
+                            ? "bg-primary text-primary-foreground shadow-xs"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        <span>Sem Vínculo</span>
+                      </button>
+                    </div>
+
+                    {/* Formulário de Novo RH */}
+                    {formData.rhMode === "novo" && (
+                      <div className="space-y-3 pt-1">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <Label htmlFor="novo_cpf" className="text-xs">
+                              CPF do Colaborador *
+                            </Label>
+                            <Input
+                              id="novo_cpf"
+                              value={formData.novo_cpf}
+                              onChange={(e) =>
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  novo_cpf: maskCpf(e.target.value),
+                                }))
+                              }
+                              placeholder="000.000.000-00"
+                              maxLength={14}
+                              className="h-8 text-xs bg-background"
+                              required
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <Label htmlFor="novo_cargo" className="text-xs">
+                              Cargo Contratual *
+                            </Label>
+                            <Input
+                              id="novo_cargo"
+                              value={formData.novo_cargo}
+                              onChange={(e) =>
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  novo_cargo: e.target.value,
+                                }))
+                              }
+                              placeholder="Ex: Instrutor de Futebol"
+                              className="h-8 text-xs bg-background"
+                              required
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <Label htmlFor="novo_org" className="text-xs">
+                              OSC / Empregadora *
+                            </Label>
+                            <select
+                              id="novo_org"
+                              value={formData.novo_organizacao_id}
+                              onChange={(e) =>
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  novo_organizacao_id: e.target.value,
+                                }))
+                              }
+                              className="h-8 w-full rounded-md border border-input bg-background px-2.5 py-1 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                              required
+                            >
+                              <option value="" disabled>
+                                Selecione a OSC...
+                              </option>
+                              {organizacoes.map((org) => (
+                                <option key={org.id} value={org.id}>
+                                  {org.nome_fantasia || org.razao_social}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="space-y-1">
+                            <Label htmlFor="novo_obj" className="text-xs">
+                              Projeto Social de Alocação *
+                            </Label>
+                            <select
+                              id="novo_obj"
+                              value={formData.novo_objeto_id}
+                              onChange={(e) => handleNovoObjetoChange(e.target.value)}
+                              className="h-8 w-full rounded-md border border-input bg-background px-2.5 py-1 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                              required
+                            >
+                              <option value="" disabled>
+                                Selecione o projeto...
+                              </option>
+                              {objetos.map((obj) => (
+                                <option key={obj.id} value={obj.id}>
+                                  {obj.nome}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="space-y-1">
+                            <Label htmlFor="novo_loc" className="text-xs">
+                              Polo / Núcleo de Atuação
+                            </Label>
+                            <select
+                              id="novo_loc"
+                              value={formData.novo_local_id}
+                              onChange={(e) =>
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  novo_local_id: e.target.value,
+                                }))
+                              }
+                              className="h-8 w-full rounded-md border border-input bg-background px-2.5 py-1 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                            >
+                              <option value="">Sem polo fixo / Equipe geral</option>
+                              {locaisParaRh.map((loc) => (
+                                <option key={loc.id} value={loc.id}>
+                                  {loc.nome}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="space-y-1">
+                            <Label htmlFor="novo_tel" className="text-xs">
+                              Telefone / WhatsApp
+                            </Label>
+                            <Input
+                              id="novo_tel"
+                              value={formData.novo_telefone}
+                              onChange={(e) =>
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  novo_telefone: maskPhone(e.target.value),
+                                }))
+                              }
+                              placeholder="(00) 00000-0000"
+                              maxLength={15}
+                              className="h-8 text-xs bg-background"
+                            />
+                          </div>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground pt-1">
+                          ✓ O login do usuário e a ficha de RH serão criados e vinculados simultaneamente.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Vincular a Funcionário Já Existente */}
+                    {formData.rhMode === "existente" && (
+                      <div className="space-y-1.5 pt-1">
+                        <Label htmlFor="funcionario_id_select" className="text-xs">
+                          Selecione o Funcionário Cadastrado
+                        </Label>
+                        <select
+                          id="funcionario_id_select"
+                          value={formData.funcionario_id}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              funcionario_id: e.target.value,
+                            }))
+                          }
+                          className="h-8 w-full rounded-md border border-input bg-background px-2.5 py-1 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        >
+                          <option value="">Selecione na lista de colaboradores...</option>
+                          {funcionarios.map((f) => (
+                            <option key={f.id} value={f.id}>
+                              {f.nome_completo} ({f.cargo})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {/* Sem Vínculo */}
+                    {formData.rhMode === "nenhum" && (
+                      <p className="text-xs text-muted-foreground italic p-2 bg-background/60 rounded border border-dashed">
+                        Este usuário terá acesso ao sistema com o perfil selecionado, mas não gerará registro na folha de RH nem estará associado a um contrato de trabalho no convênio.
+                      </p>
+                    )}
+                  </div>
+                )}
+
+              {/* Seção Simples de Vínculo em Edição ou para Papéis Administrativos */}
+              {(editingItem ||
+                !["instrutor", "supervisor", "coordenador"].includes(formData.papel)) && (
+                <div className="space-y-1.5 pt-1 border-t border-border">
+                  <Label htmlFor="funcionario_id">Vínculo com Funcionário (RH de Campo Opcional)</Label>
+                  <select
+                    id="funcionario_id"
+                    value={formData.funcionario_id}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        funcionario_id: e.target.value,
+                      }))
+                    }
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    <option value="">Apenas conta de acesso (sem vínculo em carteira)</option>
+                    {funcionarios.map((f) => (
+                      <option key={f.id} value={f.id}>
+                        {f.nome_completo} ({f.cargo})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
 
             <DialogFooter>

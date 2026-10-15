@@ -2,6 +2,8 @@ import React from "react";
 import { getUsuariosAdmin } from "@/lib/actions/usuarios";
 import { getObjetosAdmin } from "@/lib/actions/objetos";
 import { getFuncionariosAdmin } from "@/lib/actions/funcionarios";
+import { getOrganizacoes } from "@/lib/actions/organizacoes";
+import { getLocaisAdmin } from "@/lib/actions/locais";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { UsuariosClient } from "@/components/admin/usuarios-client";
 
@@ -11,10 +13,12 @@ export const metadata = {
 };
 
 export default async function UsuariosPage() {
-  const [usuarios, objetos, funcionarios] = await Promise.all([
+  const [usuarios, objetos, funcionarios, organizacoes, locais] = await Promise.all([
     getUsuariosAdmin(),
     getObjetosAdmin(),
     getFuncionariosAdmin(),
+    getOrganizacoes(),
+    getLocaisAdmin(),
   ]);
 
   return (
@@ -31,6 +35,16 @@ export default async function UsuariosPage() {
           nome_completo: f.nome_completo,
           cargo: f.cargo,
           usuario_id: f.usuario_id,
+        }))}
+        organizacoes={organizacoes.map((org) => ({
+          id: org.id,
+          razao_social: org.razao_social,
+          nome_fantasia: org.nome_fantasia,
+        }))}
+        locais={locais.map((loc) => ({
+          id: loc.id,
+          nome: loc.nome,
+          objeto_id: loc.objeto_id,
         }))}
       />
     </div>
